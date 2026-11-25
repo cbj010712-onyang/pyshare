@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3주차 활동지 · 파이썬 코드 공유방</title>
+<script src="config.js?v=20261125j"></script>
+<script src="js/weeks.js?v=20261125j"></script>
+<script src="js/mock.js?v=20261125j"></script>
+<script src="js/api.js?v=20261125j"></script>
+<script src="js/sheet-bridge.js?v=20261125j" data-week="3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F2F0; --paper: #FFFFFF; --ink: #222222; --sub: #6B6B6B; --line: #D6D6D2; --soft: #F5F5F2;
+  --data: #2E7D5B; --web: #D9602B; --sec: #6A4FB3; --mark: #FFE36E; --mark-ink: #222222; --done: #2E7D5B;
+  --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
+    --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --done: #5FBF93;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
+  --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --done: #5FBF93;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+main { max-width: 760px; margin: 0 auto; padding: 28px 18px 120px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 28px 28px 32px; }
+
+h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 4px; font-weight: 700; }
+h1 mark { background: var(--mark); color: var(--mark-ink); padding: 0 4px; }
+.goal { color: var(--sub); margin: 0 0 22px; font-size: 0.95rem; }
+
+.who { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.who label, .lab { font-size: 0.85rem; color: var(--sub); display: block; margin-bottom: 4px; }
+
+input[type=text], input[type=url], input[type=date], textarea, select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px;
+}
+textarea { resize: vertical; min-height: 70px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--mark); outline-offset: 2px;
+}
+
+section { margin-top: 32px; }
+h2 { font-size: 1.15rem; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; }
+h2 .n { color: var(--web); font-weight: 700; }
+.hint { color: var(--sub); font-size: 0.88rem; margin: 0 0 12px; }
+
+/* AI feedback */
+.steps-mini { margin: 0 0 12px; padding-left: 20px; font-size: 0.95rem; }
+.steps-mini li { margin: 4px 0; }
+.ai-links { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: 4px; }
+.prompt-box { position: relative; background: var(--soft); border-radius: 6px; padding: 14px 16px; margin-bottom: 12px; }
+.prompt-box textarea { background: transparent; border: none; padding: 0; min-height: 0; resize: none; font-size: 0.92rem; line-height: 1.7; height: 320px; }
+.prompt-box .copy { margin-top: 8px; }
+.copied { color: var(--done); font-size: 0.85rem; margin-left: 8px; }
+
+/* fields */
+.fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.field-btn {
+  text-align: left; font: inherit; color: var(--ink); background: var(--soft);
+  border: 2px solid transparent; border-radius: 6px; padding: 12px 14px; cursor: pointer;
+}
+.field-btn strong { display: block; font-size: 1.02rem; }
+.field-btn span { display: block; font-size: 0.85rem; color: var(--sub); line-height: 1.45; margin-top: 2px; }
+.field-btn[data-f="data"] strong { color: var(--data); }
+.field-btn[data-f="web"] strong { color: var(--web); }
+.field-btn[data-f="sec"] strong { color: var(--sec); }
+.field-btn[aria-pressed="true"][data-f="data"] { border-color: var(--data); background: var(--paper); }
+.field-btn[aria-pressed="true"][data-f="web"] { border-color: var(--web); background: var(--paper); }
+.field-btn[aria-pressed="true"][data-f="sec"] { border-color: var(--sec); background: var(--paper); }
+.field-btn[aria-pressed="true"] strong::before { content: '✓ '; }
+.msg { color: var(--web); font-size: 0.85rem; min-height: 1.2em; margin-top: 6px; }
+
+/* tasks */
+.progress { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; font-size: 0.92rem; }
+.progress .track { flex: 1; height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden; }
+.progress .fill { height: 100%; background: var(--done); width: 0; }
+.group-title { font-weight: 700; margin: 18px 0 6px; font-size: 1rem; }
+.task { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; background: var(--paper); }
+.task.done { border-color: color-mix(in srgb, var(--done) 45%, var(--line)); }
+.task-head {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; font: inherit; color: var(--ink);
+  background: none; border: none; padding: 12px 14px; cursor: pointer;
+}
+.box {
+  flex: none; width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center; background: var(--paper);
+}
+.task.done .box { background: var(--done); border-color: var(--done); }
+.task.done .box::after { content: ''; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.task-title { flex: 1; font-weight: 500; }
+.task.done .task-title { color: var(--sub); }
+.chev { color: var(--sub); font-size: 0.85rem; flex: none; }
+.task-head[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.task-body { display: none; padding: 2px 16px 16px 48px; }
+.task-head[aria-expanded="true"] + .task-body { display: block; }
+.task-body p { margin: 0 0 8px; font-size: 0.93rem; }
+.task-body ol { margin: 0 0 10px; padding-left: 20px; font-size: 0.92rem; }
+.task-body ol li { margin: 3px 0; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+a.link-btn {
+  display: inline-block; font-size: 0.88rem; font-weight: 500; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; background: var(--soft);
+}
+a.link-btn:hover { border-color: var(--ink); }
+.evidence { border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 8px; }
+.evidence .ev-label { font-size: 0.85rem; font-weight: 700; }
+.ev-msg { font-size: 0.83rem; color: var(--sub); }
+.ev-msg.bad { color: var(--web); }
+.confirm-list { margin: 0; padding-left: 18px; font-size: 0.92rem; }
+button.small { font: inherit; font-size: 0.9rem; font-weight: 700; border-radius: 4px; padding: 7px 14px; cursor: pointer; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); justify-self: start; }
+button.small.on { background: var(--done); border-color: var(--done); color: #fff; }
+.empty-fields { color: var(--sub); background: var(--soft); border-radius: 6px; padding: 14px 16px; font-size: 0.93rem; }
+
+textarea.code, .task-body code { font-family: 'SFMono-Regular', Consolas, 'D2Coding', monospace; font-size: 0.88rem; }
+textarea.code { min-height: 90px; white-space: pre; overflow-x: auto; }
+.task-body li.code-line { list-style: none; counter-increment: list-item 0; margin-left: -20px; }
+.task-body code { display: inline-block; background: var(--soft); border-radius: 3px; padding: 2px 8px; white-space: pre; }
+.roadmap { margin-top: 18px; }
+.road-row { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 0.92rem; }
+.road-row b { font-weight: 700; }
+.road-row.last b { color: var(--web); }
+/* prep */
+.prep .task-head { padding: 10px 14px; }
+.dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--sub); margin: 0 7px; }
+
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line);
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.bar-in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+.bar .saved { color: var(--sub); font-size: 0.82rem; flex: 1; }
+button.primary, button.ghost { font: inherit; font-weight: 700; border-radius: 6px; padding: 11px 20px; cursor: pointer; border: none; }
+button.primary { background: var(--ink); color: var(--paper); }
+button.ghost { background: transparent; color: var(--sub); border: 1px solid var(--line); font-weight: 500; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 30; }
+.modal.on { display: flex; }
+.modal-box { background: var(--paper); border-radius: 8px; max-width: 560px; width: 100%; max-height: 92vh; overflow: auto; padding: 18px; }
+.modal-box img { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+.modal-box p { font-size: 0.88rem; color: var(--sub); margin: 10px 0; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  .sheet { padding: 20px 16px 24px; }
+  h1 { font-size: 1.45rem; }
+  .who { grid-template-columns: 1fr 1fr; }
+  .who .date { grid-column: 1 / -1; }
+  .fields { grid-template-columns: 1fr; }
+  .task-body { padding-left: 16px; }
+  .bar .saved { display: none; }
+  .bar-in button { flex: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-btn { transition: border-color .15s, background .15s; }
+  .progress .fill { transition: width .3s; }
+  .chev { transition: transform .15s; }
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/sheet.css?v=20261125j">
+</head>
+<body>
+<main>
+  <div class="sheet">
+    <h1>AI 프로젝트 멘토링 <mark>활동지</mark></h1>
+    <p class="goal">AI에게 피드백을 받고, 이번 주 할 일을 하나씩 끝내요. 코드는 파이썬으로 직접 쓰고, 최종 웹앱은 선생님이 AI로 만들어 줘요. 최종 결과는 11월 마지막 주에 발표해요.</p>
+
+    <div class="who">
+      <div><label for="sid">학번</label><input type="text" id="sid" inputmode="numeric" autocomplete="off"></div>
+      <div><label for="sname">이름</label><input type="text" id="sname" autocomplete="off"></div>
+      <div class="date"><label for="sdate">일자</label><input type="date" id="sdate"></div>
+    </div>
+
+    <section>
+      <h2><span class="n">1</span>AI에게 피드백 받기</h2>
+      <p class="hint">지난주에 저장한 활동지 이미지로 AI에게 피드백을 받아요.</p>
+      <ol class="steps-mini">
+        <li>Gemini나 ChatGPT를 열어요.
+          <span class="ai-links">
+            <a class="link-btn" href="https://gemini.google.com" target="_blank" rel="noopener">Gemini 열기 ↗</a>
+            <a class="link-btn" href="https://chatgpt.com" target="_blank" rel="noopener">ChatGPT 열기 ↗</a>
+          </span>
+        </li>
+        <li>지난주 활동지 이미지를 올리고, 아래 프롬프트를 복사해서 함께 보내요.</li>
+        <li>AI의 답을 복사해서 아래 칸에 붙여 넣어요.</li>
+      </ol>
+      <div class="prompt-box">
+        <textarea id="promptText" readonly aria-label="추천 프롬프트">첨부한 이미지는 내가 고등학교 1학년 AI 프로젝트 멘토링에서 작성한 활동지야. 최종 결과 발표일은 11월 마지막 주야. 코드는 내가 파이썬으로 직접 쓰고, 최종 웹앱은 선생님이 AI로 만들어 줄 거야. 이번 주는 설계하고 시작하는 단계야.
+
+아래 5가지를 고등학생이 이해하기 쉽게 12줄 이내로 짧게 피드백해 줘.
+
+1. 이 주제가 남은 기간 안에 할 수 있는 크기인지, 크다면 어떻게 줄이면 좋을지
+2. 개인정보나 윤리적으로 조심할 점
+3. 주제 문장을 더 분명하게 다듬은 예시 1개
+4. 이번 주에 먼저 해야 할 일 2가지
+5. 이 프로젝트에서 AI에게 맡기지 않고 내가 직접 파이썬으로 코딩해 볼 만한 작은 부분 1가지
+코드나 완성본을 대신 만들어 주지 말고, 내가 스스로 생각해 볼 질문도 1개 해 줘.</textarea>
+        <div class="copy"><button type="button" class="small" id="copyBtn">프롬프트 복사</button><span class="copied" id="copyMsg" role="status"></span></div>
+      </div>
+      <label class="lab" for="aiFeedback">AI의 피드백 붙여 넣기</label>
+      <textarea id="aiFeedback" style="min-height:130px" placeholder="AI가 준 답을 여기에 붙여 넣어요"></textarea>
+      <label class="lab" for="reflect" style="margin-top:10px">그중 내가 반영할 것 한 가지</label>
+      <input type="text" id="reflect" placeholder="예) 사진을 20장에서 10장으로 줄이기">
+    </section>
+
+    <section>
+      <h2><span class="n">2</span>나의 분야와 주제</h2>
+      <p class="hint">지난주에 고른 분야를 다시 골라요. 고른 분야의 할 일이 아래에 나와요.</p>
+      <div class="fields">
+        <button type="button" class="field-btn" data-f="data" aria-pressed="false"><strong>① 데이터 분석</strong><span>설문을 모아 평균·순위를 구하고 그래프로 보여주기</span></button>
+        <button type="button" class="field-btn" data-f="web" aria-pressed="false"><strong>② 미니 웹앱</strong><span>파이썬으로 규칙을 만들고, 웹앱으로 보여주기</span></button>
+        <button type="button" class="field-btn" data-f="sec" aria-pressed="false"><strong>③ AI 윤리·보안</strong><span>보안·개인정보 문제점과 해결 방법을 알리는 캠페인</span></button>
+      </div>
+      <div class="msg" id="fieldMsg" role="status"></div>
+      <label class="lab" for="topic" style="margin-top:6px">나의 주제 (AI 피드백을 반영해 한 문장으로)</label>
+      <input type="text" id="topic" placeholder="예) 우리 반은 AI 사진을 얼마나 잘 구별할까?">
+    </section>
+
+    <section>
+      <h2><span class="n">3</span>이번 주 할 일</h2>
+      <p class="hint">이번 주는 설계하고 시작하는 단계예요. 할 일을 누르면 방법과 링크가 나오고, 맨 아래 칸을 채우면 체크가 저절로 돼요.</p>
+      <div class="progress"><span id="progText">할 일 0개 중 0개 완료</span><span class="track"><span class="fill" id="progFill"></span></span></div>
+      <div id="tasks"></div>
+    </section>
+
+    <section>
+      <h2><span class="n">4</span>다음 주에 해야 할 일 미리 준비하기</h2>
+      <p class="hint">미리 해 두면 다음 주에 훨씬 빠르게 진행할 수 있어요.</p>
+      <div id="prep" class="prep"></div>
+      <div class="roadmap" id="roadmap"></div>
+      <label class="lab" for="ask" style="margin-top:14px">막힌 점이나 선생님께 질문 (선택)</label>
+      <textarea id="ask" placeholder="예) 구글폼에서 이메일 수집을 끄는 방법을 모르겠어요"></textarea>
+    </section>
+  </div>
+</main>
+
+<div class="bar"><div class="bar-in">
+  <span class="saved">쓰는 내용은 공유방에 자동으로 저장돼요</span>
+  <button type="button" class="ghost" id="resetBtn">새로 쓰기</button>
+  <button type="button" class="primary" id="saveBtn">제출하기</button>
+</div></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
+    <h2 id="modalTitle" style="margin-bottom:10px">제출 완료</h2>
+    <img id="preview" alt="작성한 활동지 이미지">
+    <p id="modalNote">휴대폰에서는 이미지를 길게 눌러 사진에 저장할 수도 있어요.</p>
+    <div class="modal-actions">
+      <button type="button" class="ghost" id="closeBtn">닫기</button>
+      <button type="button" class="primary" id="dlBtn">이미지로 받기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIELDS = {
+  data: { name: '① 데이터 분석', color: '#18804F' },
+  web:  { name: '② 미니 웹앱', color: '#C75A1E' },
+  sec:  { name: '③ AI 윤리·보안', color: '#6A4FB3' },
+};
+
+const RE_FORM = /^https?:\/\/(forms\.gle\/|docs\.google\.com\/forms\/)\S+/i;
+const RE_PAGES = /^https?:\/\/[a-z0-9-]+\.github\.io(\/\S*)?$/i;
+const RE_GHID = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+const RE_REPO = /^[A-Za-z0-9._-]{1,100}$/;
+
+/* 할 일 정의
+   ev.type: text(입력 1개) / multi(여러 개 중 need개 이상, 칸마다 re 가능) / date / select / confirm(확인 버튼) / done(했어요 버튼) */
+const TASKS = {
+  data: [
+    { id: 'd1', title: '설문 질문 3개 정하기',
+      desc: '분석하기 쉽게 질문을 정해요. 답은 객관식이나 숫자로 받는 게 좋아요.',
+      steps: ['주관식보다 객관식(보기 고르기)이나 숫자로 답하게 만들어요.', '성적처럼 민감한 내용은 "60~70점"처럼 범위로 물어봐요.', '한 사람이 보기 하나만 고르게 하면 분석이 쉬워요.'],
+      links: [],
+      ev: { type: 'multi', need: 3, label: '내 설문 질문', items: [
+        { k: 'q1', ph: '질문 1 (예: 방과 후에 가장 많이 가는 곳은? - 객관식)' },
+        { k: 'q2', ph: '질문 2' }, { k: 'q3', ph: '질문 3' }, { k: 'q4', ph: '질문 4 (선택)' } ] } },
+    { id: 'd2', title: '개인정보 점검하기',
+      desc: '설문에 친구가 누구인지 알 수 있는 정보가 들어가지 않게 확인해요.',
+      steps: [], links: [],
+      ev: { type: 'confirm', label: '아래를 모두 확인했나요?', items: ['이름, 학번, 전화번호를 묻지 않는다', '구글폼 설정에서 "이메일 주소 수집"을 끈다', '민감한 질문(성적 등)은 범위로 묻는다'] } },
+    { id: 'd3', title: '구글폼 만들고 링크 붙여 넣기',
+      desc: '구글폼으로 설문을 만들어요. 이번 주에는 만들기만 하고, 배포는 다음 주에 해요.',
+      steps: ['구글폼 열기 → 빈 양식 만들기', '질문을 넣고 답 형식(객관식, 단답형 등)을 고르기', '"보내기" → 링크 아이콘 → "URL 단축" 체크 → 복사'],
+      links: [{ label: '구글폼 열기', url: 'https://docs.google.com/forms/' }],
+      ev: { type: 'text', k: 'form', label: '내 구글폼 링크', ph: 'https://forms.gle/...', re: RE_FORM, bad: '구글폼 링크는 forms.gle 또는 docs.google.com/forms 로 시작해요' } },
+    { id: 'd4', title: '직접 코딩: 응답 개수 세어 보기',
+      desc: 'Colab에서 아래 코드를 직접 쳐 보고, 보기를 내 설문 보기로 바꿔서 실행해요. 다음 주에 진짜 응답을 셀 때 쓰는 원리예요.',
+      steps: ['Colab 열기 → 새 노트 → 코드 칸에 직접 입력 (복사 말고 손으로!)', "answers = ['학원', '집', '학원', '독서실', '학원']", "print(answers.count('학원'))", '보기를 내 설문 보기로 바꾸고 ▶ 실행'],
+      links: [{ label: 'Colab 열기', url: 'https://colab.research.google.com' }],
+      ev: { type: 'multi', need: 2, label: '내가 쓴 코드와 실행 결과', items: [
+        { k: 'code', ph: "내가 쓴 코드 붙여 넣기 (count가 들어가야 해요)", area: true, code: true, re: /\.count\(/ },
+        { k: 'out', ph: '실행 결과 (예: 3)', re: /\d/ } ] } },
+  ],
+  web: [
+    { id: 'w1', title: '입력 → 규칙 → 출력 정리하기',
+      desc: '내 웹앱이 무엇을 받아서 어떻게 바꿔 보여주는지 정리해요. 선생님이 웹앱을 만들 때 이 내용이 설계도가 돼요.',
+      steps: ['입력: 사용자가 넣거나 고르는 것', '규칙: 입력을 결과로 바꾸는 방법 (예: 28도 이상이면 반팔)', '출력: 화면에 보여줄 결과'],
+      links: [],
+      ev: { type: 'multi', need: 3, label: '내 웹앱의 흐름', items: [
+        { k: 'in', ph: '입력 (예: 지역 선택)' }, { k: 'rule', ph: '규칙 (예: 기온별 옷차림 표)' }, { k: 'out', ph: '출력 (예: 추천 옷)' } ] } },
+    { id: 'w2', title: '규칙 표 만들기',
+      desc: '"조건 → 결과"를 3줄 이상 적어요. 이 표가 그대로 파이썬의 if문이 돼요.',
+      steps: ['조건은 숫자나 고르는 값으로 분명하게 적어요.', '예) 28도 이상 → 반팔 / 17도 이상 → 맨투맨 / 그 밖 → 패딩'],
+      links: [],
+      ev: { type: 'multi', need: 3, label: '내 규칙 표', items: [
+        { k: 'r1', ph: '규칙 1 (예: 28도 이상 → 반팔)' }, { k: 'r2', ph: '규칙 2' }, { k: 'r3', ph: '규칙 3' }, { k: 'r4', ph: '규칙 4 (선택)' }, { k: 'r5', ph: '규칙 5 (선택)' } ] } },
+    { id: 'w3', title: '웹앱 화면 설명하기',
+      desc: '선생님이 웹앱을 만들 때 참고할 수 있게, 화면에 무엇이 있어야 하는지 적어요.',
+      steps: ['입력칸, 버튼, 결과가 어디에 어떻게 나오면 좋을지 적어요.', '예) 위에 지역 고르는 칸, 가운데 확인 버튼, 아래에 추천 옷과 이유'],
+      links: [],
+      ev: { type: 'text', k: 'screen', label: '내가 원하는 화면', ph: '예) 지역 선택 칸 → 확인 버튼 → 추천 옷과 이유' } },
+    { id: 'w4', title: '직접 코딩: 규칙을 if문으로 만들기',
+      desc: 'Colab에서 내 규칙 표를 파이썬 if문으로 직접 만들어요. temp 값을 바꿔 가며 실행해 봐요.',
+      steps: ['Colab 열기 → 새 노트 → 코드 칸에 직접 입력 (복사 말고 손으로!)', 'temp = 18', 'if temp >= 28:', "    print('반팔')", 'elif temp >= 17:', "    print('맨투맨')", 'else:', "    print('패딩')", '내 규칙 표로 바꾸고 ▶ 실행'],
+      links: [{ label: 'Colab 열기', url: 'https://colab.research.google.com' }],
+      ev: { type: 'multi', need: 2, label: '내가 쓴 코드와 실행 결과', items: [
+        { k: 'code', ph: '내가 쓴 코드 붙여 넣기 (if와 print가 들어가야 해요)', area: true, code: true, re: /\bif\b[\s\S]*print\s*\(/ },
+        { k: 'out', ph: '실행 결과 (예: 맨투맨)' } ] } },
+  ],
+  sec: [
+    { id: 's1', title: '문제점 2개와 출처 찾기',
+      desc: '내 캠페인 주제에서 생길 수 있는 문제를 찾고, 어디서 찾았는지 함께 적어요.',
+      steps: ['기사나 공공기관 자료에서 찾으면 믿을 만해요.', '출처는 사이트 이름과 주소를 같이 적어요.'],
+      links: [{ label: '개인정보보호위원회', url: 'https://www.pipc.go.kr' }, { label: 'KISA 보호나라', url: 'https://www.boho.or.kr' }],
+      ev: { type: 'multi', need: 4, label: '문제점과 출처', items: [
+        { k: 'p1', ph: '문제점 1 (예: 한 곳에서 비밀번호가 새면 다른 계정도 털린다)' }, { k: 'src1', ph: '출처 1' },
+        { k: 'p2', ph: '문제점 2' }, { k: 'src2', ph: '출처 2' } ] } },
+    { id: 's2', title: '해결 방법 2개 정리하기',
+      desc: '친구들이 바로 따라 할 수 있는 해결 방법을 적어요.',
+      steps: ['"조심하자"보다 "사이트마다 비밀번호 다르게"처럼 구체적인 행동으로 적어요.'],
+      links: [],
+      ev: { type: 'multi', need: 2, label: '해결 방법', items: [{ k: 'f1', ph: '해결 방법 1' }, { k: 'f2', ph: '해결 방법 2' }] } },
+    { id: 's3', title: '캠페인 웹앱의 핵심 기능 고르기',
+      desc: '캠페인 웹앱은 선생님이 AI로 만들어 줘요. 웹앱에서 가장 중요하게 보여줄 기능을 골라요.',
+      steps: ['퀴즈: 친구들이 직접 풀어 보며 배우기', '체크리스트: 내가 잘 지키고 있는지 점검하기', '해결 방법 카드: 문제와 해결 방법을 한눈에 보기'],
+      links: [],
+      ev: { type: 'select', k: 'feat', label: '핵심 기능', options: ['퀴즈', '체크리스트', '해결 방법 카드', '기타'] } },
+    { id: 's4', title: '직접 코딩: O/X 퀴즈 한 문제',
+      desc: 'Colab에서 퀴즈 한 문제를 직접 코딩해요. 질문을 내 캠페인 내용으로 바꿔서 실행해 봐요.',
+      steps: ['Colab 열기 → 새 노트 → 코드 칸에 직접 입력', "answer = input('같은 비밀번호를 여러 곳에 써도 될까요? (O/X) ')", "if answer == 'X':", "    print('정답! 사이트마다 다르게 써요')", 'else:', "    print('위험해요! 한 곳이 털리면 다 털려요')", '질문과 답을 내 캠페인 내용으로 바꾸고 ▶ 실행'],
+      links: [{ label: 'Colab 열기', url: 'https://colab.research.google.com' }],
+      ev: { type: 'multi', need: 2, label: '내가 쓴 코드와 질문', items: [
+        { k: 'code', ph: '내가 쓴 코드 붙여 넣기 (if와 print가 들어가야 해요)', area: true, code: true, re: /\bif\b[\s\S]*print\s*\(/ },
+        { k: 'q', ph: '내가 바꾼 퀴즈 질문' } ] } },
+  ],
+};
+
+const PREP = {
+  data: [
+    { title: '설문 배포 문구 미리 써 오기',
+      desc: '다음 주에 단톡방에 올릴 한마디를 미리 써 와요. 예) "익명 설문이에요, 1분이면 끝나요!" 응답은 5주차 전까지 넉넉하게 모아요.', links: [] },
+    { title: '응답을 CSV로 내려받는 방법 알아 두기',
+      desc: '구글폼 "응답" 탭 → "Sheets에 연결" → 스프레드시트에서 파일 → 다운로드 → CSV',
+      links: [{ label: '구글폼 열기', url: 'https://docs.google.com/forms/' }] },
+    { title: 'CSV 불러오는 코드 한 줄 미리 쳐 보기',
+      desc: "다음 주에는 import pandas as pd 와 df = pd.read_csv('파일이름.csv') 를 직접 입력할 거예요. Colab에서 미리 한 번 쳐 봐요.",
+      links: [{ label: 'Colab 열기', url: 'https://colab.research.google.com' }] },
+  ],
+  web: [
+    { title: '규칙 표 빠진 칸 채워 오기',
+      desc: '모든 경우가 규칙 표에 들어갔는지 확인해요. 빠진 경우가 있으면 웹앱이 엉뚱한 답을 해요.', links: [] },
+    { title: '여러 값으로 실행해 보기 (테스트)',
+      desc: 'temp 값을 30, 20, 10, 0처럼 바꿔 가며 실행해서 결과가 맞게 나오는지 확인해요.',
+      links: [{ label: 'Colab 열기', url: 'https://colab.research.google.com' }] },
+    { title: '웹앱에 꼭 넣고 싶은 기능 1가지 정리해 오기',
+      desc: '선생님께 요청할 기능을 한 문장으로 적어 와요. 예) 지역을 고르면 실제 오늘 기온을 가져오기', links: [] },
+  ],
+  sec: [
+    { title: '캠페인 문구 후보 3개 만들어 오기',
+      desc: '친구 2~3명에게 보여 주고 가장 와닿는 문구를 골라 와요.', links: [] },
+    { title: '쓸 자료·사진 목록과 출처 정리해 오기',
+      desc: '사진은 직접 찍거나 AI로 직접 만들고, 다른 사람 얼굴이 나오지 않게 해요. 가져온 자료는 출처를 적어요.',
+      links: [{ label: 'KISA 보호나라', url: 'https://www.boho.or.kr' }] },
+    { title: '퀴즈 문제 2개 더 생각해 오기',
+      desc: '다음 주에 파이썬 퀴즈를 3문제로 늘려요. 질문과 정답을 미리 적어 와요.', links: [] },
+  ],
+};
+
+const ROADMAP = {
+  data: [['4주차', '설문 배포하고 응답 모으기 · Colab에서 CSV 불러오기 (read_csv 한 줄은 직접 입력)'],
+         ['5주차', '그래프 2개 만들기 (제목과 축 이름은 직접 수정) · 결과 해석하기'],
+         ['발표', '선생님이 만든 웹앱으로 분석 결과 발표하기']],
+  web:  [['4주차', '규칙 전부 if문으로 만들기 (직접 코딩) · 여러 값으로 테스트'],
+         ['5주차', '규칙을 함수(def)로 묶기 (직접 코딩) · 선생님이 만든 웹앱 첫 버전 확인하고 고칠 점 요청'],
+         ['발표', '웹앱으로 시연하고 실행 구조 설명하기']],
+  sec:  [['4주차', '캠페인 문구 정하기 · 파이썬 퀴즈 3문제로 늘리기 (직접 코딩)'],
+         ['5주차', '선생님이 만든 캠페인 웹앱 확인하고 고칠 점 요청'],
+         ['발표', '캠페인 웹앱으로 발표하기']],
+};
+
+const KEY = SheetBridge.key('mentoring-week3-v3');
+const $ = id => document.getElementById(id);
+let state = { picked: [], ev: {}, confirm: {}, done: {}, open: {} };
+let lastBlob = null, lastName = '';
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function fmtDate(v) { if (!v) return ''; const [y,m,d] = v.split('-'); return `${Number(m)}월 ${Number(d)}일`; }
+const evKey = (t, k) => t.id + '.' + k;
+const getEv = (t, k) => (state.ev[evKey(t, k)] || '').trim();
+
+function isDone(t) {
+  const e = t.ev;
+  if (e.type === 'text') { const v = getEv(t, e.k); return v.length >= 2 && (!e.re || e.re.test(v)); }
+  if (e.type === 'multi') return e.items.filter(i => { const v = getEv(t, i.k); return v.length >= 1 && (i.re ? i.re.test(v) : v.length >= 2); }).length >= e.need;
+  if (e.type === 'date' || e.type === 'select') return !!getEv(t, e.k);
+  if (e.type === 'confirm') return !!state.confirm[t.id];
+  if (e.type === 'done') return !!state.done[t.id];
+  return false;
+}
+function evSummary(t) {
+  const e = t.ev;
+  if (e.type === 'text' || e.type === 'select') return getEv(t, e.k);
+  if (e.type === 'date') return fmtDate(getEv(t, e.k));
+  if (e.type === 'multi') return e.items.map(i => getEv(t, i.k)).filter(Boolean).join(' / ');
+  if (e.type === 'confirm') return state.confirm[t.id] ? '모두 확인함' : '';
+  if (e.type === 'done') return state.done[t.id] ? '완료' : '';
+  return '';
+}
+
+function looksCode(s) { return /^(\s*)(answers|print|answer|temp|if |elif |else:|import|df )/.test(s) || /^\s{4}print/.test(s); }
+function linksHTML(links) {
+  if (!links || !links.length) return '';
+  return '<div class="links">' + links.map(l => `<a class="link-btn" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('') + '</div>';
+}
+function evidenceHTML(t) {
+  const e = t.ev; const val = k => esc(state.ev[evKey(t, k)] || '');
+  let h = `<div class="evidence"><span class="ev-label">${esc(e.label)}</span>`;
+  if (e.type === 'text') {
+    h += `<input type="text" data-ev="${evKey(t, e.k)}" value="${val(e.k)}" placeholder="${esc(e.ph || '')}" aria-label="${esc(e.label)}">`;
+    if (e.suggest) h += `<span class="ev-msg" data-suggest="${t.id}"></span>`;
+    h += `<span class="ev-msg" data-msg="${t.id}"></span>`;
+  } else if (e.type === 'multi') {
+    h += e.items.map(i => i.area
+      ? `<textarea class="${i.code ? 'code' : ''}" data-ev="${evKey(t, i.k)}" placeholder="${esc(i.ph)}" aria-label="${esc(i.ph)}" spellcheck="false">${val(i.k)}</textarea>`
+      : `<input type="text" data-ev="${evKey(t, i.k)}" value="${val(i.k)}" placeholder="${esc(i.ph)}" aria-label="${esc(i.ph)}">`).join('');
+  } else if (e.type === 'date') {
+    h += `<input type="date" data-ev="${evKey(t, e.k)}" value="${val(e.k)}" aria-label="${esc(e.label)}">`;
+  } else if (e.type === 'select') {
+    h += `<select data-ev="${evKey(t, e.k)}" aria-label="${esc(e.label)}"><option value="">골라 주세요</option>` +
+      e.options.map(o => `<option${state.ev[evKey(t, e.k)] === o ? ' selected' : ''}>${esc(o)}</option>`).join('') + '</select>';
+  } else if (e.type === 'confirm') {
+    h += '<ul class="confirm-list">' + e.items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul>';
+    h += `<button type="button" class="small${state.confirm[t.id] ? ' on' : ''}" data-confirm="${t.id}">${state.confirm[t.id] ? '✓ 모두 확인했어요' : '모두 확인했어요'}</button>`;
+  } else if (e.type === 'done') {
+    h += `<button type="button" class="small${state.done[t.id] ? ' on' : ''}" data-done="${t.id}">${state.done[t.id] ? '✓ ' + esc(e.btn) : esc(e.btn)}</button>`;
+  }
+  return h + '</div>';
+}
+function taskHTML(t) {
+  const open = !!state.open[t.id];
+  return `<div class="task${isDone(t) ? ' done' : ''}" id="task-${t.id}">
+    <button type="button" class="task-head" data-toggle="${t.id}" aria-expanded="${open}" aria-controls="body-${t.id}">
+      <span class="box" role="img" aria-label="${isDone(t) ? '완료' : '아직'}"></span>
+      <span class="task-title">${esc(t.title)}</span><span class="chev" aria-hidden="true">▶</span>
+    </button>
+    <div class="task-body" id="body-${t.id}">
+      <p>${esc(t.desc)}</p>
+      ${t.steps.length ? '<ol>' + t.steps.map(s => looksCode(s) ? `<li class="code-line"><code>${esc(s)}</code></li>` : `<li>${esc(s)}</li>`).join('') + '</ol>' : ''}
+      ${linksHTML(t.links)}
+      ${evidenceHTML(t)}
+    </div></div>`;
+}
+function prepHTML(p, i, f) {
+  const id = 'p-' + f + i; const open = !!state.open[id];
+  return `<div class="task" id="task-${id}">
+    <button type="button" class="task-head" data-toggle="${id}" aria-expanded="${open}" aria-controls="body-${id}">
+      <span class="dot" aria-hidden="true"></span><span class="task-title">${esc(p.title)}</span><span class="chev" aria-hidden="true">▶</span>
+    </button>
+    <div class="task-body" id="body-${id}"><p>${esc(p.desc)}</p>${linksHTML(p.links)}</div></div>`;
+}
+
+function allTasks() { return state.picked.flatMap(f => TASKS[f]); }
+
+function renderTasks() {
+  const box = $('tasks');
+  if (!state.picked.length) {
+    box.innerHTML = '<div class="empty-fields">2번에서 분야를 고르면 할 일이 여기에 나와요.</div>';
+    $('prep').innerHTML = '<div class="empty-fields">2번에서 분야를 고르면 다음 주 준비할 일이 여기에 나와요.</div>';
+    $('roadmap').innerHTML = '';
+  } else {
+    box.innerHTML = state.picked.map(f => `<div class="group-title" style="color:var(--${f})">${FIELDS[f].name}</div>` + TASKS[f].map(taskHTML).join('')).join('');
+    $('prep').innerHTML = state.picked.map(f => `<div class="group-title" style="color:var(--${f})">${FIELDS[f].name}</div>` + PREP[f].map((p, i) => prepHTML(p, i, f)).join('')).join('');
+    $('roadmap').innerHTML = '<div class="group-title">11월 마지막 주 발표까지의 로드맵</div>' + state.picked.map(f =>
+      `<div class="group-title" style="color:var(--${f});font-size:.92rem;margin-top:10px">${FIELDS[f].name}</div>` +
+      ROADMAP[f].map(([w, d], i, arr) => `<div class="road-row${i === arr.length - 1 ? ' last' : ''}"><b>${esc(w)}</b><span>${esc(d)}</span></div>`).join('')).join('');
+  }
+  allTasks().forEach(updateMsgs);
+  renderProgress();
+}
+function renderProgress() {
+  const ts = allTasks(); const n = ts.filter(isDone).length;
+  $('progText').textContent = `할 일 ${ts.length}개 중 ${n}개 완료`;
+  $('progFill').style.width = ts.length ? (n / ts.length * 100) + '%' : '0';
+}
+function refreshTask(t) {
+  if (!t) return;
+  const el = $('task-' + t.id); if (!el) return;
+  const d = isDone(t);
+  el.classList.toggle('done', d);
+  el.querySelector('.box').setAttribute('aria-label', d ? '완료' : '아직');
+  updateMsgs(t); renderProgress();
+}
+function updateMsgs(t) {
+  const e = t.ev; if (e.type !== 'text') return;
+  const m = document.querySelector(`[data-msg="${t.id}"]`);
+  const v = getEv(t, e.k);
+  if (m) { const bad = v && e.re && !e.re.test(v); m.textContent = bad ? e.bad : ''; m.classList.toggle('bad', !!bad); }
+  const s = document.querySelector(`[data-suggest="${t.id}"]`);
+  if (s) {
+    const id = (state.ev['w1.ghid'] || '').trim(), repo = (state.ev['w2.repo'] || '').trim();
+    s.textContent = id && repo && RE_GHID.test(id) ? `내 주소는 아마 https://${id.toLowerCase()}.github.io/${repo}/ 일 거예요` : '';
+  }
+}
+function findTask(id) { for (const f in TASKS) { const t = TASKS[f].find(x => x.id === id); if (t) return t; } return null; }
+
+/* events */
+document.querySelectorAll('.field-btn').forEach(b => b.addEventListener('click', () => {
+  const f = b.dataset.f; $('fieldMsg').textContent = '';
+  if (state.picked.includes(f)) state.picked = state.picked.filter(x => x !== f);
+  else if (state.picked.length >= 2) { $('fieldMsg').textContent = '최대 2개까지 고를 수 있어요. 하나를 먼저 해제해 주세요.'; return; }
+  else state.picked.push(f);
+  renderFields(); renderTasks(); save();
+}));
+function renderFields() { document.querySelectorAll('.field-btn').forEach(b => b.setAttribute('aria-pressed', state.picked.includes(b.dataset.f))); }
+
+document.addEventListener('click', e => {
+  const tg = e.target.closest('[data-toggle]');
+  if (tg) {
+    const id = tg.dataset.toggle; state.open[id] = !state.open[id];
+    tg.setAttribute('aria-expanded', state.open[id]);
+    if (state.open[id]) { const body = $('body-' + id); requestAnimationFrame(() => body.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); }
+    save(); return;
+  }
+  const cf = e.target.closest('[data-confirm]');
+  if (cf) { const id = cf.dataset.confirm; state.confirm[id] = !state.confirm[id];
+    cf.classList.toggle('on', state.confirm[id]); cf.textContent = state.confirm[id] ? '✓ 모두 확인했어요' : '모두 확인했어요';
+    refreshTask(findTask(id)); save(); return; }
+  const dn = e.target.closest('[data-done]');
+  if (dn) { const id = dn.dataset.done; const t = findTask(id); state.done[id] = !state.done[id];
+    dn.classList.toggle('on', state.done[id]); dn.textContent = (state.done[id] ? '✓ ' : '') + t.ev.btn;
+    refreshTask(t); save(); }
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset && e.target.dataset.ev; if (!k) return;
+  state.ev[k] = e.target.value;
+  const t = findTask(k.split('.')[0]); refreshTask(t);
+  save();
+});
+document.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.ev && e.target.tagName === 'SELECT') { state.ev[e.target.dataset.ev] = e.target.value; refreshTask(findTask(e.target.dataset.ev.split('.')[0])); save(); } });
+
+const PLAIN = ['sid','sname','sdate','aiFeedback','reflect','topic','ask'];
+PLAIN.forEach(id => $(id).addEventListener('input', save));
+
+$('copyBtn').addEventListener('click', async () => {
+  const ta = $('promptText');
+  try { await navigator.clipboard.writeText(ta.value); $('copyMsg').textContent = '복사했어요!'; }
+  catch (e) { ta.focus(); ta.select(); $('copyMsg').textContent = '선택된 글자를 길게 누르거나 Ctrl+C로 복사하세요'; }
+});
+
+function save() {
+  const d = { state: { picked: state.picked, ev: state.ev, confirm: state.confirm, done: state.done, open: state.open } };
+  PLAIN.forEach(id => d[id] = $(id).value);
+  try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+}
+function load() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (d && d.state) {
+    const s = d.state;
+    state.picked = Array.isArray(s.picked) ? s.picked.filter(f => FIELDS[f]).slice(0, 2) : [];
+    state.ev = s.ev && typeof s.ev === 'object' ? s.ev : {};
+    state.confirm = s.confirm || {}; state.done = s.done || {}; state.open = s.open || {};
+    PLAIN.forEach(id => { if (typeof d[id] === 'string') $(id).value = d[id]; });
+  }
+  if (!$('sdate').value) $('sdate').value = today();
+}
+$('resetBtn').addEventListener('click', () => {
+  if (!confirm('지금 쓴 내용을 모두 지우고 새로 쓸까요?')) return;
+  state = { picked: [], ev: {}, confirm: {}, done: {}, open: {} };
+  PLAIN.forEach(id => $(id).value = ''); $('sdate').value = today();
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  renderFields(); renderTasks(); window.scrollTo(0, 0);
+});
+
+/* ---- 이미지 만들기 (캔버스에 직접 그림) ---- */
+const CW = 760, PAD = 40, SCALE = 2;
+const CFONT = "'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+function setFont(ctx, size, bold) { ctx.font = `${bold ? 700 : 400} ${size}px ${CFONT}`; }
+function trimTrail(lines) { const l = lines[lines.length - 1]; while (l.length && l[l.length - 1].space) l.pop(); }
+function layoutRuns(ctx, runs, size, maxW) {
+  const lines = [[]]; let x = 0;
+  for (const run of runs) {
+    setFont(ctx, size, run.bold);
+    if (run.mark && x > 0) x += 4;
+    for (const tok of run.text.split(/(\s+)/).filter(t => t)) {
+      const w = ctx.measureText(tok).width;
+      if (/^\s+$/.test(tok)) { if (x === 0) continue; lines[lines.length - 1].push({ x, w, text: tok, run, space: true }); x += w; continue; }
+      if (x + w > maxW && x > 0) { trimTrail(lines); lines.push([]); x = 0; }
+      if (w > maxW) {
+        for (const ch of tok) { const cw = ctx.measureText(ch).width; if (x + cw > maxW && x > 0) { lines.push([]); x = 0; } lines[lines.length - 1].push({ x, w: cw, text: ch, run }); x += cw; }
+        continue;
+      }
+      lines[lines.length - 1].push({ x, w, text: tok, run }); x += w;
+    }
+    if (run.mark) x += 4;
+  }
+  trimTrail(lines); return lines;
+}
+function drawLines(ctx, lines, x0, y0, size, lineH) {
+  lines.forEach((line, i) => {
+    const mid = y0 + i * lineH + lineH / 2;
+    line.forEach(it => { if (it.run.mark) { ctx.fillStyle = '#FFE36E'; ctx.fillRect(x0 + it.x - 3, mid - size * 0.72, it.w + 6, size * 1.44); } });
+    line.forEach(it => { if (it.space) return; setFont(ctx, size, it.run.bold); ctx.fillStyle = it.run.color || '#1B2130'; ctx.fillText(it.text, x0 + it.x, mid); });
+  });
+  return lines.length * lineH;
+}
+function rrect(ctx, x, y, w, h, r, color) {
+  ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); ctx.fill();
+}
+async function makeImage() {
+  try { await Promise.all([document.fonts.load("400 16px 'IBM Plex Sans KR'", '가'), document.fonts.load("700 16px 'IBM Plex Sans KR'", '가')]); } catch (e) {}
+  const H = 8000;
+  const c = document.createElement('canvas'); c.width = CW * SCALE; c.height = H * SCALE;
+  const ctx = c.getContext('2d'); ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = '#FFFDF7'; ctx.fillRect(0, 0, CW, H);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const maxW = CW - PAD * 2, GREY = '#6B6B6B', EMPTY_C = '#B0B0AC';
+  const v = id => $(id).value.trim();
+  const val = s => s ? { text: s } : { text: '(비어 있음)', color: EMPTY_C };
+  let y = 36;
+  const para = (runs, size = 15, lineH = 25, x = PAD, w = maxW) => { y += drawLines(ctx, layoutRuns(ctx, runs, size, w), x, y, size, lineH); };
+  const multiline = (text, size = 14, lineH = 23, color) => {
+    if (!text) { para([val('')], size, lineH); return; }
+    text.split(/\r?\n/).forEach(line => { if (line.trim()) para([{ text: line, color }], size, lineH); else y += lineH * 0.5; });
+  };
+  const box = (fn, padX = 16, padY = 12) => {
+    const startY = y;
+    // draw content to measure height on a temp pass
+    y += padY; const contentStart = y; fn(true); const h = y - contentStart + padY * 2;
+    // repaint: clear area, draw box, draw content again
+    ctx.fillStyle = '#FFFDF7'; ctx.fillRect(PAD - 2, startY, maxW + 4, h + 4);
+    rrect(ctx, PAD, startY, maxW, h, 5, '#FAF7EF');
+    y = startY + padY; fn(false); y = startY + h;
+  };
+  const head = (n, t) => { y += 24; para([{ text: n + '  ', bold: true, color: '#2D5BD0' }, { text: t, bold: true, color: GREY }], 14, 22); y += 4; };
+
+  para([{ text: 'AI 프로젝트 멘토링 ', bold: true }, { text: '활동지', bold: true, mark: true }], 26, 40);
+  y += 12;
+  box(() => para([{ text: '학번  ', color: GREY }, val(v('sid')), { text: '        이름  ', color: GREY }, val(v('sname')),
+    { text: '        일자  ', color: GREY }, val(fmtDate(v('sdate')))], 15, 24, PAD + 14, maxW - 28), 14, 10);
+
+  head('1', 'AI에게 받은 피드백');
+  let fb = v('aiFeedback'); if (fb.length > 1200) fb = fb.slice(0, 1200) + ' …(생략)';
+  box(() => multilineIn(fb), 16, 12);
+  function multilineIn(text) {
+    if (!text) { para([val('')], 14, 23, PAD + 16, maxW - 32); return; }
+    text.split(/\r?\n/).forEach(line => { if (line.trim()) para([{ text: line }], 14, 23, PAD + 16, maxW - 32); else y += 10; });
+  }
+  y += 8;
+  para([{ text: '내가 반영할 것: ', bold: true }, val(v('reflect'))]);
+
+  head('2', '나의 분야와 주제');
+  if (state.picked.length) {
+    let x = PAD;
+    state.picked.forEach(f => {
+      setFont(ctx, 15, true);
+      const w = ctx.measureText(FIELDS[f].name).width + 26;
+      rrect(ctx, x, y, w, 30, 15, FIELDS[f].color);
+      ctx.fillStyle = '#FFFFFF'; ctx.fillText(FIELDS[f].name, x + 13, y + 15); x += w + 8;
+    });
+    y += 38;
+  } else para([val('')]);
+  para([{ text: '주제: ', bold: true }, v('topic') ? { text: v('topic'), mark: true, bold: true } : val('')], 16, 30);
+
+  const ts = allTasks(); const nDone = ts.filter(isDone).length;
+  head('3', `이번 주 할 일 (${ts.length}개 중 ${nDone}개 완료)`);
+  state.picked.forEach(f => {
+    y += 4; para([{ text: FIELDS[f].name, bold: true, color: FIELDS[f].color }], 14, 24);
+    TASKS[f].forEach(t => {
+      const d = isDone(t), top = y, mid = top + 12.5;
+      ctx.lineWidth = 2; ctx.strokeStyle = d ? '#18804F' : '#C8C8C4';
+      if (d) { rrect(ctx, PAD, mid - 9, 18, 18, 3, '#18804F'); ctx.strokeStyle = '#FFFFFF'; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(PAD + 4.5, mid); ctx.lineTo(PAD + 8, mid + 3.5); ctx.lineTo(PAD + 14, mid - 4); ctx.stroke(); }
+      else { ctx.strokeRect(PAD + 1, mid - 8, 16, 16); }
+      para([{ text: t.title, color: d ? '#1B2130' : GREY, bold: d }], 15, 25, PAD + 28, maxW - 28);
+      const codeItems = t.ev.type === 'multi' ? t.ev.items.filter(i => i.code) : [];
+      const other = t.ev.type === 'multi' ? t.ev.items.filter(i => !i.code).map(i => getEv(t, i.k)).filter(Boolean).join(' / ') : evSummary(t);
+      if (other) para([{ text: other, color: GREY }], 13, 21, PAD + 28, maxW - 28);
+      codeItems.forEach(i => {
+        const code = (state.ev[evKey(t, i.k)] || '').replace(/\t/g, '    ').split(/\r?\n/).filter(l => l.trim()).slice(0, 12);
+        if (!code.length) return;
+        const lh = 19, bh = code.length * lh + 14;
+        y += 2; rrect(ctx, PAD + 28, y, maxW - 28, bh, 4, '#FAF7EF');
+        ctx.font = "13px 'SFMono-Regular', Consolas, 'D2Coding', 'Malgun Gothic', monospace"; ctx.fillStyle = '#333333';
+        code.forEach((l, j) => ctx.fillText(l, PAD + 40, y + 7 + j * lh + lh / 2, maxW - 52));
+        y += bh + 2;
+      });
+      y += 4;
+    });
+  });
+  if (!state.picked.length) para([val('')]);
+
+  head('4', '다음 주에 해야 할 일 미리 준비하기');
+  state.picked.forEach(f => PREP[f].forEach(p => para([{ text: '· ' + p.title }], 14, 24)));
+  if (!state.picked.length) para([val('')]);
+  if (v('ask')) { y += 8; para([{ text: '막힌 점·질문: ', bold: true }]); multiline(v('ask'), 14, 23); }
+
+  y += 26;
+  setFont(ctx, 12, false); ctx.fillStyle = '#9A9A96'; ctx.textAlign = 'right';
+  ctx.fillText('AI 프로젝트 멘토링 · 파이썬 코드 공유방 · 3주차', CW - PAD, y); ctx.textAlign = 'left';
+  y += 30;
+
+  const out = document.createElement('canvas'); out.width = CW * SCALE; out.height = Math.ceil(Math.min(y, H) * SCALE);
+  out.getContext('2d').drawImage(c, 0, 0, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+$('saveBtn').addEventListener('click', async () => {
+  const btn = $('saveBtn'); btn.disabled = true; btn.textContent = '만드는 중…';
+  try {
+    const canvas = await makeImage();
+    lastBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const nm = $('sname').value.trim() || '이름없음';
+    lastName = `활동지_${nm}_${$('sdate').value || today()}.png`.replace(/[\\/:*?"<>|]/g, '');
+    $('preview').src = canvas.toDataURL('image/png');
+    const sub = await SheetBridge.submit(canvas); $('modalNote').textContent = sub.msg;
+    $('modal').classList.add('on');
+  } catch (e) { alert('이미지를 만들지 못했어요. 다시 한 번 눌러 주세요.'); }
+  finally { btn.disabled = false; btn.textContent = '제출하기'; }
+});
+let downloads = null;
+(async () => {
+  try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+  if (!downloads) { $('modalNote').textContent = '이미지를 길게 누르거나(휴대폰) 마우스 오른쪽 버튼을 눌러(컴퓨터) 저장하세요.'; }
+})();
+$('dlBtn').addEventListener('click', async () => {
+  if (!lastBlob) return;
+  if (!downloads) { SheetBridge.download(lastBlob, lastName); return; }
+  try { await downloads.save({ filename: lastName, data: lastBlob }); $('modalNote').textContent = '저장했어요!'; }
+  catch (e) {
+    if (e && e.code === 'declined') return;
+    if (e && e.code === 'rate_limited') { $('modalNote').textContent = '잠시 후 다시 눌러 주세요.'; return; }
+    $('modalNote').textContent = '파일 저장이 안 되면 이미지를 길게 누르거나 오른쪽 버튼을 눌러 저장하세요.';
+  }
+});
+function closeModal() { $('modal').classList.remove('on'); $('saveBtn').focus(); }
+$('closeBtn').addEventListener('click', closeModal);
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal').classList.contains('on')) closeModal(); });
+
+// 지난주 활동지 불러오기 (sheet-bridge.js 가 불러요): 비어 있는 분야·주제만 채워요. force = true 면 덮어써요
+window.SheetCarry = (c, force) => {
+  const done = [];
+  const pk = (c.picked || []).filter(f => FIELDS[f]).slice(0, 2);
+  if (pk.length && (force || !state.picked.length)) { state.picked = pk; done.push('분야'); }
+  if (c.topic && (force || !$('topic').value.trim())) { $('topic').value = c.topic; done.push('주제'); }
+  if (done.length) { renderFields(); renderTasks(); save(); }
+  return done;
+};
+SheetBridge.start(KEY, () => { load(); renderFields(); renderTasks(); });
+</script>
+</body>
+</html>

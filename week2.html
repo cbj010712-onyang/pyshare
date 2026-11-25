@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2주차 활동지 · 파이썬 코드 공유방</title>
+<script src="config.js?v=20261125j"></script>
+<script src="js/weeks.js?v=20261125j"></script>
+<script src="js/mock.js?v=20261125j"></script>
+<script src="js/api.js?v=20261125j"></script>
+<script src="js/sheet-bridge.js?v=20261125j" data-week="2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F2F0; --paper: #FFFFFF; --ink: #222222; --sub: #6B6B6B; --line: #D6D6D2; --soft: #F5F5F2;
+  --data: #2E7D5B; --web: #D9602B; --sec: #6A4FB3; --mark: #FFE36E; --mark-ink: #222222;
+  --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
+    --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --mark: #FFE36E; --mark-ink: #222222;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
+  --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --mark: #FFE36E; --mark-ink: #222222;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+main { max-width: 760px; margin: 0 auto; padding: 28px 18px 120px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 28px 28px 32px; }
+
+h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 4px; font-weight: 700; }
+h1 mark { background: var(--mark); color: var(--mark-ink); padding: 0 4px; }
+.goal { color: var(--sub); margin: 0 0 22px; font-size: 0.95rem; }
+
+.who { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.who label { font-size: 0.85rem; color: var(--sub); display: block; margin-bottom: 4px; }
+
+input[type=text], input[type=date], textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px;
+}
+textarea { resize: vertical; min-height: 70px; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, .field-btn:focus-visible, summary:focus-visible {
+  outline: 3px solid var(--mark); outline-offset: 2px;
+}
+
+section { margin-top: 30px; }
+h2 { font-size: 1.15rem; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; }
+h2 .n { color: var(--web); font-weight: 700; }
+.hint { color: var(--sub); font-size: 0.88rem; margin: 0 0 12px; }
+
+.fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.field-btn {
+  text-align: left; font: inherit; color: var(--ink); background: var(--soft);
+  border: 2px solid transparent; border-radius: 6px; padding: 12px 14px; cursor: pointer;
+}
+.field-btn strong { display: block; font-size: 1.02rem; }
+.field-btn span { display: block; font-size: 0.85rem; color: var(--sub); line-height: 1.45; margin-top: 2px; }
+.field-btn[data-f="data"] strong { color: var(--data); }
+.field-btn[data-f="web"] strong { color: var(--web); }
+.field-btn[data-f="sec"] strong { color: var(--sec); }
+.field-btn[aria-pressed="true"][data-f="data"] { border-color: var(--data); background: var(--paper); }
+.field-btn[aria-pressed="true"][data-f="web"] { border-color: var(--web); background: var(--paper); }
+.field-btn[aria-pressed="true"][data-f="sec"] { border-color: var(--sec); background: var(--paper); }
+.field-btn[aria-pressed="true"] strong::before { content: '✓ '; }
+.mix { margin-top: 12px; display: none; }
+.mix.on { display: block; }
+.mix label, .row label { font-size: 0.9rem; font-weight: 500; display: block; margin-bottom: 4px; }
+.msg { color: var(--web); font-size: 0.85rem; min-height: 1.2em; margin-top: 6px; }
+
+.ideas { display: grid; gap: 8px; }
+
+.blanks { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; }
+.row label { margin: 0; }
+.sentence {
+  margin-top: 16px; padding: 16px 18px; background: var(--soft); border-radius: 6px;
+  font-size: 1.12rem; line-height: 1.9;
+}
+.sentence .lbl { display: block; font-size: 0.82rem; color: var(--sub); line-height: 1.4; margin-bottom: 4px; }
+.sentence mark { background: var(--mark); color: var(--mark-ink); padding: 1px 4px; font-weight: 700; }
+.sentence .empty { color: var(--sub); border-bottom: 2px dashed var(--line); padding: 0 18px; }
+
+details.examples { margin-top: 14px; border: 1px solid var(--line); border-radius: 6px; }
+details.examples summary { cursor: pointer; padding: 10px 14px; font-weight: 500; font-size: 0.95rem; }
+.ex-body { padding: 4px 16px 14px; }
+.ex-body p.tip { color: var(--sub); font-size: 0.85rem; margin: 0 0 8px; }
+.ex-body h3 { font-size: 0.95rem; margin: 14px 0 4px; }
+.ex-body ul { margin: 0; padding-left: 18px; font-size: 0.9rem; }
+.ex-body li { margin: 3px 0; }
+.ex-body li b { font-weight: 500; }
+.ex-body li span { color: var(--sub); }
+
+.checks label { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.checks input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--data); flex: none; }
+.checks small { display: block; color: var(--sub); font-size: 0.85rem; }
+
+.prep { display: grid; gap: 8px; margin-bottom: 12px; }
+.prep div { background: var(--soft); border-radius: 6px; padding: 10px 14px; font-size: 0.92rem; }
+.prep b { display: block; }
+.prep .none { color: var(--sub); }
+
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line);
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.bar-in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+.bar .saved { color: var(--sub); font-size: 0.82rem; flex: 1; }
+button.primary, button.ghost {
+  font: inherit; font-weight: 700; border-radius: 6px; padding: 11px 20px; cursor: pointer; border: none;
+}
+button.primary { background: var(--ink); color: var(--paper); }
+button.ghost { background: transparent; color: var(--sub); border: 1px solid var(--line); font-weight: 500; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 30; }
+.modal.on { display: flex; }
+.modal-box { background: var(--paper); border-radius: 8px; max-width: 560px; width: 100%; max-height: 92vh; overflow: auto; padding: 18px; }
+.modal-box img { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+.modal-box p { font-size: 0.88rem; color: var(--sub); margin: 10px 0; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  .sheet { padding: 20px 16px 24px; }
+  h1 { font-size: 1.45rem; }
+  .who { grid-template-columns: 1fr 1fr; }
+  .who .date { grid-column: 1 / -1; }
+  .fields { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr; gap: 4px; }
+  .bar .saved { display: none; }
+  .bar-in button { flex: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-btn { transition: border-color .15s, background .15s; }
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/sheet.css?v=20261125j">
+</head>
+<body>
+<main>
+  <div class="sheet">
+    <h1>AI 프로젝트 멘토링 <mark>활동지</mark></h1>
+    <p class="goal">분야를 고르고, 내 프로젝트 주제를 한 문장으로 정해요. 쓰는 대로 공유방에 저장되고, 다 쓰면 아래 [제출하기]를 눌러요.</p>
+
+    <div class="who">
+      <div><label for="sid">학번</label><input type="text" id="sid" inputmode="numeric" autocomplete="off"></div>
+      <div><label for="sname">이름</label><input type="text" id="sname" autocomplete="off"></div>
+      <div class="date"><label for="sdate">일자</label><input type="date" id="sdate"></div>
+    </div>
+
+    <section>
+      <h2><span class="n">1</span>나의 분야 고르기</h2>
+      <p class="hint">1개 또는 2개를 고르세요. 두 분야를 섞어도 돼요!</p>
+      <div class="fields">
+        <button type="button" class="field-btn" data-f="data" aria-pressed="false"><strong>① 데이터 분석</strong><span>설문을 모아 평균·순위를 구하고 그래프로 보여주기</span></button>
+        <button type="button" class="field-btn" data-f="web" aria-pressed="false"><strong>② 미니 웹앱</strong><span>버튼을 누르면 결과가 나오는 작은 웹 프로그램</span></button>
+        <button type="button" class="field-btn" data-f="sec" aria-pressed="false"><strong>③ AI 윤리·보안</strong><span>보안·개인정보 문제점과 해결 방법을 알리는 캠페인</span></button>
+      </div>
+      <div class="msg" id="fieldMsg" role="status"></div>
+      <div class="mix" id="mixBox">
+        <label for="mix">두 분야를 어떻게 섞을까요?</label>
+        <input type="text" id="mix" placeholder="예) 데이터 분석 결과를 웹앱으로 보여주기">
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="n">2</span>아이디어 꺼내기</h2>
+      <p class="hint">평소에 불편했거나 궁금했던 것 2가지를 적어요.</p>
+      <div class="ideas">
+        <input type="text" id="idea1" placeholder="예) 시험 기간에 공부 계획 세우기가 귀찮다" aria-label="아이디어 1">
+        <input type="text" id="idea2" placeholder="예) 우리 반은 몇 시에 자는지 궁금하다" aria-label="아이디어 2">
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="n">3</span>주제를 한 문장으로</h2>
+      <p class="hint">빈칸을 채우면 아래에 문장이 완성돼요.</p>
+      <div class="blanks">
+        <div class="row"><label for="who">누구를 위해</label><input type="text" id="who" placeholder="예) 우리 반 친구들"></div>
+        <div class="row"><label for="what">무엇을 만들어서</label><input type="text" id="what" placeholder="예) 수면시간 그래프"></div>
+        <div class="row"><label for="goal">알아낼 것 · 해결할 것</label><input type="text" id="goal" placeholder="예) 잠을 많이 자는 게 도움이 되는지 알아본다"></div>
+      </div>
+      <div class="sentence" id="sentence" aria-live="polite"></div>
+
+      <details class="examples">
+        <summary>아이디어가 안 떠오르면? 주제 예시 보기</summary>
+        <div class="ex-body">
+          <p class="tip">그대로 쓰지 말고, 대상이나 내용을 나에게 맞게 바꿔 보세요!</p>
+          <h3 style="color:var(--data)">① 데이터 분석</h3>
+          <ul>
+            <li><b>우리 반 등교 시간 분포</b> <span>몇 시에 가장 많이 도착하는지</span></li>
+            <li><b>급식 메뉴 선호도 순위</b> <span>인기 메뉴 TOP 5 막대그래프</span></li>
+            <li><b>스마트폰 사용시간과 수면시간</b> <span>폰을 오래 쓰면 잠이 줄어드는지</span></li>
+            <li><b>아침 식사와 오전 피곤함</b> <span>아침을 먹으면 덜 피곤한지</span></li>
+            <li><b>공부 장소별 집중도</b> <span>집·독서실·카페 중 어디가 좋은지</span></li>
+          </ul>
+          <h3 style="color:var(--web)">② 미니 웹앱</h3>
+          <ul>
+            <li><b>시험 D-day 공부량 계산기</b> <span>하루 공부량 알려주기</span></li>
+            <li><b>오늘의 영단어 퀴즈</b> <span>단어 5개 랜덤 출제</span></li>
+            <li><b>랜덤 점심메뉴 추천기</b> <span>버튼 한 번으로 메뉴 고르기</span></li>
+            <li><b>용돈 기입장 계산기</b> <span>수입·지출 넣으면 남은 돈</span></li>
+            <li><b>수행평가 마감일 정리판</b> <span>급한 순서대로 정렬</span></li>
+          </ul>
+          <h3 style="color:var(--sec)">③ AI 윤리·보안 캠페인</h3>
+          <ul>
+            <li><b>같은 비밀번호, 괜찮을까?</b> <span>한 곳이 털리면 생기는 문제와 해결 방법</span></li>
+            <li><b>SNS에 올려도 될까?</b> <span>교복·위치·얼굴 노출 문제와 대처법</span></li>
+            <li><b>AI 가짜 사진·영상 구별하기</b> <span>딥페이크의 위험과 구별 방법</span></li>
+            <li><b>수상한 문자, 누르지 마세요</b> <span>사칭 문자의 문제점과 대처법</span></li>
+            <li><b>AI로 숙제, 어디까지 괜찮을까?</b> <span>올바르게 쓰는 기준 알리기</span></li>
+          </ul>
+          <h3>섞은 예시</h3>
+          <ul>
+            <li><b>데이터 분석 + 윤리·보안</b> <span>같은 비밀번호 사용 설문 → 그래프를 캠페인 근거로</span></li>
+            <li><b>윤리·보안 → 미니 웹앱</b> <span>SNS 캠페인을 OX 퀴즈 웹앱으로</span></li>
+            <li><b>데이터 분석 → 미니 웹앱</b> <span>급식 선호도 결과를 보여주는 웹 페이지</span></li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <section>
+      <h2><span class="n">4</span>좋은 주제인지 확인하기</h2>
+      <p class="hint">모두 체크되면 통과!</p>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"><span>한 문장으로 말할 수 있다<small>설명이 길어지면 주제가 너무 커요</small></span></label>
+        <label><input type="checkbox" id="c2"><span>핵심 기능이 1~2개뿐이다<small>섞은 주제도 마찬가지예요</small></span></label>
+        <label><input type="checkbox" id="c3"><span>재료를 직접 구할 수 있다<small>반 친구 10~20명 설문이면 충분해요</small></span></label>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="n">5</span>다음 시간까지 준비할 재료</h2>
+      <p class="hint">1번에서 고른 분야의 할 일이 보여요.</p>
+      <div class="prep" id="prep"></div>
+      <label for="mine" style="font-size:.9rem;font-weight:500;display:block;margin-bottom:4px">내가 준비할 것</label>
+      <textarea id="mine" placeholder="예) 수면시간 설문 구글폼 만들어서 단톡방에 올리기"></textarea>
+    </section>
+  </div>
+</main>
+
+<div class="bar"><div class="bar-in">
+  <span class="saved" id="savedNote">쓰는 내용은 공유방에 자동으로 저장돼요</span>
+  <button type="button" class="ghost" id="resetBtn">새로 쓰기</button>
+  <button type="button" class="primary" id="saveBtn">제출하기</button>
+</div></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
+    <h2 id="modalTitle" style="margin-bottom:10px">제출 완료</h2>
+    <img id="preview" alt="작성한 활동지 이미지">
+    <p id="modalNote">휴대폰에서는 이미지를 길게 눌러 사진에 저장할 수도 있어요.</p>
+    <div class="modal-actions">
+      <button type="button" class="ghost" id="closeBtn">닫기</button>
+      <button type="button" class="primary" id="dlBtn">이미지로 받기</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const FIELDS = {
+  data: { name: '① 데이터 분석', color: '#18804F',
+          prep: '설문 질문 3개를 구글폼으로 만들어 반 단톡방에 올리기 (이름·학번은 받지 않기)' },
+  web:  { name: '② 미니 웹앱', color: '#C75A1E',
+          prep: '화면을 종이에 그리고, "입력 → 계산 규칙 → 출력"을 한 줄로 적기' },
+  sec:  { name: '③ AI 윤리·보안', color: '#6A4FB3',
+          prep: '문제점 2~3개와 해결 방법을 조사하고, 찾은 곳(출처) 적기' },
+};
+const TEXT_IDS = ['sid','sname','sdate','mix','idea1','idea2','who','what','goal','mine'];
+const CHECK_IDS = ['c1','c2','c3'];
+const KEY = SheetBridge.key('mentoring-worksheet-draft');
+const $ = id => document.getElementById(id);
+let picked = [];
+let lastBlob = null, lastName = '';
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+
+function renderFields() {
+  document.querySelectorAll('.field-btn').forEach(b => b.setAttribute('aria-pressed', picked.includes(b.dataset.f)));
+  $('mixBox').classList.toggle('on', picked.length === 2);
+  const prep = $('prep');
+  if (!picked.length) { prep.innerHTML = '<div class="none">1번에서 분야를 먼저 골라 주세요.</div>'; return; }
+  prep.innerHTML = picked.map(f => `<div><b style="color:var(--${f})">${FIELDS[f].name}</b>${esc(FIELDS[f].prep)}</div>`).join('');
+}
+
+const josa = (w, a, b) => { const c = String(w).trim().slice(-1).charCodeAt(0); return c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 ? a : b; };
+function sentenceHTML(who, what, goal, emptyClass) {
+  const part = (v, ph) => v ? `<mark>${esc(v)}</mark>` : `<span class="${emptyClass}">${ph}</span>`;
+  // 조사는 앞 낱말에 맞춰요 (친구들을 / 그래프를), 끝이 '~다'로 끝나면 '한다'를 붙이지 않아요
+  const j = (v, ph) => josa(v || ph, '을', '를');
+  const end = (goal && /다\.?$/.test(goal) ? '' : '한다') + (goal && /\.$/.test(goal) ? '' : '.');
+  return `나는 ${part(who,'누구')}${j(who,'누구')} 위해 ${part(what,'무엇')}${j(what,'무엇')} 만들어서 ${part(goal,'무엇을 알아내거나 해결')}${end}`;
+}
+function renderSentence() {
+  $('sentence').innerHTML = '<span class="lbl">완성된 문장</span>' + sentenceHTML($('who').value.trim(), $('what').value.trim(), $('goal').value.trim(), 'empty');
+}
+
+function collect() {
+  const d = { picked };
+  TEXT_IDS.forEach(id => d[id] = $(id).value);
+  CHECK_IDS.forEach(id => d[id] = $(id).checked);
+  return d;
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch (e) {}
+}
+function load() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (d) {
+    picked = Array.isArray(d.picked) ? d.picked.filter(f => FIELDS[f]).slice(0,2) : [];
+    TEXT_IDS.forEach(id => { if (typeof d[id] === 'string') $(id).value = d[id]; });
+    CHECK_IDS.forEach(id => $(id).checked = !!d[id]);
+  }
+  if (!$('sdate').value) $('sdate').value = today();
+}
+
+document.querySelectorAll('.field-btn').forEach(b => b.addEventListener('click', () => {
+  const f = b.dataset.f;
+  $('fieldMsg').textContent = '';
+  if (picked.includes(f)) picked = picked.filter(x => x !== f);
+  else if (picked.length >= 2) { $('fieldMsg').textContent = '최대 2개까지 고를 수 있어요. 하나를 먼저 해제해 주세요.'; return; }
+  else picked.push(f);
+  renderFields(); save();
+}));
+TEXT_IDS.forEach(id => $(id).addEventListener('input', () => { if (['who','what','goal'].includes(id)) renderSentence(); save(); }));
+CHECK_IDS.forEach(id => $(id).addEventListener('change', save));
+
+$('resetBtn').addEventListener('click', () => {
+  if (!confirm('지금 쓴 내용을 모두 지우고 새로 쓸까요?')) return;
+  picked = [];
+  TEXT_IDS.forEach(id => $(id).value = '');
+  CHECK_IDS.forEach(id => $(id).checked = false);
+  $('sdate').value = today();
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  renderFields(); renderSentence();
+  window.scrollTo(0, 0);
+});
+
+function fmtDate(v) {
+  if (!v) return '';
+  const [y,m,d] = v.split('-');
+  return `${Number(m)}월 ${Number(d)}일`;
+}
+// ---- 이미지 만들기: 캔버스에 직접 그려서 줄바꿈과 형광펜이 정확하게 나오도록 ----
+const CW = 760, PAD = 40, SCALE = 2;
+const CFONT = "'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+function setFont(ctx, size, bold) { ctx.font = `${bold ? 700 : 400} ${size}px ${CFONT}`; }
+function trimTrail(lines) { const l = lines[lines.length - 1]; while (l.length && l[l.length - 1].space) l.pop(); }
+
+function layoutRuns(ctx, runs, size, maxW) {
+  const lines = [[]]; let x = 0;
+  for (const run of runs) {
+    setFont(ctx, size, run.bold);
+    if (run.mark && x > 0) x += 4;
+    for (const tok of run.text.split(/(\s+)/).filter(t => t)) {
+      const w = ctx.measureText(tok).width;
+      if (/^\s+$/.test(tok)) {
+        if (x === 0) continue;
+        lines[lines.length - 1].push({ x, w, text: tok, run, space: true }); x += w; continue;
+      }
+      if (x + w > maxW && x > 0) { trimTrail(lines); lines.push([]); x = 0; }
+      if (w > maxW) {
+        for (const ch of tok) {
+          const cw = ctx.measureText(ch).width;
+          if (x + cw > maxW && x > 0) { lines.push([]); x = 0; }
+          lines[lines.length - 1].push({ x, w: cw, text: ch, run }); x += cw;
+        }
+        continue;
+      }
+      lines[lines.length - 1].push({ x, w, text: tok, run }); x += w;
+    }
+    if (run.mark) x += 4;
+  }
+  trimTrail(lines);
+  return lines;
+}
+function drawLines(ctx, lines, x0, y0, size, lineH) {
+  lines.forEach((line, i) => {
+    const mid = y0 + i * lineH + lineH / 2;
+    line.forEach(it => {
+      if (it.run.mark) { ctx.fillStyle = '#FFE36E'; ctx.fillRect(x0 + it.x - 3, mid - size * 0.72, it.w + 6, size * 1.44); }
+    });
+    line.forEach(it => {
+      if (it.space) return;
+      setFont(ctx, size, it.run.bold);
+      ctx.fillStyle = it.run.color || '#1B2130';
+      ctx.fillText(it.text, x0 + it.x, mid);
+    });
+  });
+  return lines.length * lineH;
+}
+function rrect(ctx, x, y, w, h, r, color) {
+  ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); ctx.fill();
+}
+
+async function makeImage() {
+  try {
+    await Promise.all([document.fonts.load("400 16px 'IBM Plex Sans KR'", '가'), document.fonts.load("700 16px 'IBM Plex Sans KR'", '가')]);
+  } catch (e) {}
+  const H = 4000;
+  const c = document.createElement('canvas'); c.width = CW * SCALE; c.height = H * SCALE;
+  const ctx = c.getContext('2d'); ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = '#FFFDF7'; ctx.fillRect(0, 0, CW, H);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const maxW = CW - PAD * 2;
+  const v = id => $(id).value.trim();
+  const GREY = '#6B6B6B', EMPTY_C = '#B0B0AC';
+  const val = s => s ? { text: s } : { text: '(비어 있음)', color: EMPTY_C };
+  const markOr = (s, ph) => s ? { text: s, mark: true, bold: true } : { text: '(' + ph + ')', color: EMPTY_C };
+  let y = 36;
+  const para = (runs, size = 15, lineH = 25, x = PAD, w = maxW) => { y += drawLines(ctx, layoutRuns(ctx, runs, size, w), x, y, size, lineH); };
+  const box = (runs, size, lineH, padX, padY) => {
+    const lines = layoutRuns(ctx, runs, size, maxW - padX * 2);
+    const h = lines.length * lineH + padY * 2;
+    rrect(ctx, PAD, y, maxW, h, 5, '#FAF7EF');
+    drawLines(ctx, lines, PAD + padX, y + padY, size, lineH);
+    y += h;
+  };
+  const head = (n, t) => { y += 22; para([{ text: n + '  ', bold: true, color: '#2D5BD0' }, { text: t, bold: true, color: GREY }], 14, 22); y += 4; };
+
+  para([{ text: 'AI 프로젝트 멘토링 ', bold: true }, { text: '활동지', bold: true, mark: true }], 26, 40);
+  y += 12;
+  box([{ text: '학번  ', color: GREY }, val(v('sid')), { text: '        이름  ', color: GREY }, val(v('sname')),
+       { text: '        일자  ', color: GREY }, val(fmtDate(v('sdate')))], 15, 24, 14, 10);
+
+  head('1', '나의 분야');
+  if (picked.length) {
+    let x = PAD;
+    picked.forEach(f => {
+      setFont(ctx, 15, true);
+      const w = ctx.measureText(FIELDS[f].name).width + 26;
+      rrect(ctx, x, y, w, 30, 15, FIELDS[f].color);
+      ctx.fillStyle = '#FFFFFF'; ctx.fillText(FIELDS[f].name, x + 13, y + 15);
+      x += w + 8;
+    });
+    y += 30;
+    if (picked.length === 2) { y += 6; para([{ text: '섞는 방법: ' }, val(v('mix'))]); }
+  } else para([val('')]);
+
+  head('2', '아이디어');
+  para([{ text: '· ' }, val(v('idea1'))]);
+  para([{ text: '· ' }, val(v('idea2'))]);
+
+  head('3', '나의 주제');
+  box([{ text: '나는 ' }, markOr(v('who'), '누구'), { text: josa(v('who') || '누구', '을', '를') + ' 위해 ' }, markOr(v('what'), '무엇'),
+       { text: josa(v('what') || '무엇', '을', '를') + ' 만들어서 ' }, markOr(v('goal'), '무엇을 알아내거나 해결'),
+       { text: (/다\.?$/.test(v('goal')) ? '' : '한다') + (/\.$/.test(v('goal')) ? '' : '.') }], 19, 36, 18, 14);
+
+  head('4', '주제 점검');
+  [['c1', '한 문장으로 말할 수 있다'], ['c2', '핵심 기능이 1~2개뿐이다'], ['c3', '재료를 직접 구할 수 있다']].forEach(([id, t]) => {
+    const on = $(id).checked, mid = y + 12.5;
+    ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (on) { ctx.strokeStyle = '#18804F'; ctx.beginPath(); ctx.moveTo(PAD + 2, mid); ctx.lineTo(PAD + 7, mid + 5); ctx.lineTo(PAD + 15, mid - 6); ctx.stroke(); }
+    else { ctx.strokeStyle = EMPTY_C; ctx.beginPath(); ctx.arc(PAD + 8, mid, 6, 0, Math.PI * 2); ctx.stroke(); }
+    para([{ text: t, color: on ? '#1B2130' : GREY }], 15, 25, PAD + 26, maxW - 26);
+  });
+
+  head('5', '다음 시간까지 준비할 재료');
+  picked.forEach(f => para([{ text: '· ' }, { text: FIELDS[f].prep }]));
+  y += 4;
+  para([{ text: '내가 준비할 것: ', bold: true }, val(v('mine'))]);
+
+  y += 26;
+  setFont(ctx, 12, false); ctx.fillStyle = '#9A9A96'; ctx.textAlign = 'right';
+  ctx.fillText('AI 프로젝트 멘토링 · 파이썬 코드 공유방 · 2주차', CW - PAD, y); ctx.textAlign = 'left';
+  y += 30;
+
+  const out = document.createElement('canvas'); out.width = CW * SCALE; out.height = Math.ceil(y * SCALE);
+  out.getContext('2d').drawImage(c, 0, 0, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+$('saveBtn').addEventListener('click', async () => {
+  const btn = $('saveBtn');
+  btn.disabled = true; btn.textContent = '만드는 중…';
+  try {
+    const canvas = await makeImage();
+    lastBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const nm = $('sname').value.trim() || '이름없음';
+    lastName = `활동지_${nm}_${$('sdate').value || today()}.png`.replace(/[\\/:*?"<>|]/g, '');
+    $('preview').src = canvas.toDataURL('image/png');
+    const sub = await SheetBridge.submit(canvas); $('modalNote').textContent = sub.msg;
+    $('modal').classList.add('on');
+    if ($('dlBtn').style.display !== 'none') $('dlBtn').focus();
+  } catch (e) {
+    alert('이미지를 만들지 못했어요. 다시 한 번 눌러 주세요.');
+  } finally {
+    btn.disabled = false; btn.textContent = '제출하기';
+  }
+});
+
+let downloads = null;
+(async () => {
+  try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+  if (!downloads) {
+    $('modalNote').textContent = '이미지를 길게 누르거나(휴대폰) 마우스 오른쪽 버튼을 눌러(컴퓨터) 저장하세요.';
+  }
+})();
+
+$('dlBtn').addEventListener('click', async () => {
+  if (!lastBlob) return;
+  if (!downloads) { SheetBridge.download(lastBlob, lastName); return; }
+  try {
+    await downloads.save({ filename: lastName, data: lastBlob });
+    $('modalNote').textContent = '저장했어요!';
+  } catch (e) {
+    if (e && e.code === 'declined') return;
+    if (e && e.code === 'rate_limited') { $('modalNote').textContent = '잠시 후 다시 눌러 주세요.'; return; }
+    $('modalNote').textContent = '파일 저장이 안 되면 이미지를 길게 누르거나 오른쪽 버튼을 눌러 저장하세요.';
+  }
+});
+function closeModal() { $('modal').classList.remove('on'); $('saveBtn').focus(); }
+$('closeBtn').addEventListener('click', closeModal);
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal').classList.contains('on')) closeModal(); });
+
+SheetBridge.start(KEY, () => { load(); renderFields(); renderSentence(); });
+</script>
+</body>
+</html>

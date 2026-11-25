@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>파이썬 코드 공유방</title>
+<meta name="description" content="멘토링 학생들이 파이썬 코드를 저장하고, 실행하고, 친구 코드를 보는 곳">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/codemirror.css?v=20261125j">
+<link rel="stylesheet" href="css/style.css?v=20261125j">
+</head>
+<body>
+<header class="top" id="top">
+  <a class="brand" href="#home"><span class="prompt" aria-hidden="true">&gt;&gt;&gt;</span><span class="brand-name">파이썬 코드 공유방</span></a>
+  <div class="top-right" id="topRight"></div>
+</header>
+
+<main id="app" tabindex="-1"></main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="drawerTitle">
+  <div class="drawer-head"><h2 id="drawerTitle"></h2><button class="btn ghost icon" id="drawerClose" aria-label="닫기">✕</button></div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+<div class="modal-wrap" id="modal" hidden><div class="modal" role="dialog" aria-modal="true" id="modalCard"></div></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="config.js?v=20261125j"></script>
+<script src="js/mock.js?v=20261125j"></script>
+<script src="js/weeks.js?v=20261125j"></script>
+<script src="js/api.js?v=20261125j"></script>
+<script src="js/runner.js?v=20261125j"></script>
+<script src="js/zip.js?v=20261125j"></script>
+<script src="js/app.js?v=20261125j"></script>
+</body>
+</html>

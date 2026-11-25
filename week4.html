@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>4주차 활동지 · 파이썬 코드 공유방</title>
+<script src="config.js?v=20261125j"></script>
+<script src="js/weeks.js?v=20261125j"></script>
+<script src="js/mock.js?v=20261125j"></script>
+<script src="js/api.js?v=20261125j"></script>
+<script src="js/sheet-bridge.js?v=20261125j" data-week="4"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F2F0; --paper: #FFFFFF; --ink: #222222; --sub: #6B6B6B; --line: #D6D6D2; --soft: #F5F5F2;
+  --data: #2E7D5B; --web: #D9602B; --sec: #6A4FB3; --mark: #FFE36E; --mark-ink: #222222; --done: #2E7D5B;
+  --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
+    --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --done: #5FBF93;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
+  --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --done: #5FBF93;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+main { max-width: 760px; margin: 0 auto; padding: 28px 18px 120px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 28px 28px 32px; }
+
+h1 { font-size: 1.75rem; line-height: 1.3; margin: 0 0 4px; font-weight: 700; }
+h1 mark { background: var(--mark); color: var(--mark-ink); padding: 0 4px; }
+.goal { color: var(--sub); margin: 0 0 22px; font-size: 0.95rem; }
+
+.who { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.who label, .lab { font-size: 0.85rem; color: var(--sub); display: block; margin-bottom: 4px; }
+
+input[type=text], input[type=url], input[type=date], textarea, select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px;
+}
+textarea { resize: vertical; min-height: 70px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 3px solid var(--mark); outline-offset: 2px;
+}
+
+section { margin-top: 32px; }
+h2 { font-size: 1.15rem; margin: 0 0 4px; display: flex; gap: 10px; align-items: baseline; }
+h2 .n { color: var(--web); font-weight: 700; }
+.hint { color: var(--sub); font-size: 0.88rem; margin: 0 0 12px; }
+
+/* AI feedback */
+.steps-mini { margin: 0 0 12px; padding-left: 20px; font-size: 0.95rem; }
+.steps-mini li { margin: 4px 0; }
+.ai-links { display: inline-flex; gap: 8px; flex-wrap: wrap; margin-left: 4px; }
+.prompt-box { position: relative; background: var(--soft); border-radius: 6px; padding: 14px 16px; margin-bottom: 12px; }
+.prompt-box textarea { background: transparent; border: none; padding: 0; min-height: 0; resize: none; font-size: 0.92rem; line-height: 1.7; height: 360px; }
+.prompt-box .copy { margin-top: 8px; }
+.copied { color: var(--done); font-size: 0.85rem; margin-left: 8px; }
+
+/* fields */
+.fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.field-btn {
+  text-align: left; font: inherit; color: var(--ink); background: var(--soft);
+  border: 2px solid transparent; border-radius: 6px; padding: 12px 14px; cursor: pointer;
+}
+.field-btn strong { display: block; font-size: 1.02rem; }
+.field-btn span { display: block; font-size: 0.85rem; color: var(--sub); line-height: 1.45; margin-top: 2px; }
+.field-btn[data-f="data"] strong { color: var(--data); }
+.field-btn[data-f="web"] strong { color: var(--web); }
+.field-btn[data-f="sec"] strong { color: var(--sec); }
+.field-btn[aria-pressed="true"][data-f="data"] { border-color: var(--data); background: var(--paper); }
+.field-btn[aria-pressed="true"][data-f="web"] { border-color: var(--web); background: var(--paper); }
+.field-btn[aria-pressed="true"][data-f="sec"] { border-color: var(--sec); background: var(--paper); }
+.field-btn[aria-pressed="true"] strong::before { content: '✓ '; }
+.msg { color: var(--web); font-size: 0.85rem; min-height: 1.2em; margin-top: 6px; }
+
+/* tasks */
+.progress { display: flex; align-items: center; gap: 12px; margin: 4px 0 14px; font-size: 0.92rem; }
+.progress .track { flex: 1; height: 8px; background: var(--soft); border-radius: 4px; overflow: hidden; }
+.progress .fill { height: 100%; background: var(--done); width: 0; }
+.group-title { font-weight: 700; margin: 18px 0 6px; font-size: 1rem; }
+.task { border: 1px solid var(--line); border-radius: 6px; margin-bottom: 8px; background: var(--paper); }
+.task.done { border-color: color-mix(in srgb, var(--done) 45%, var(--line)); }
+.task-head {
+  width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; font: inherit; color: var(--ink);
+  background: none; border: none; padding: 12px 14px; cursor: pointer;
+}
+.box {
+  flex: none; width: 22px; height: 22px; border-radius: 4px; border: 2px solid var(--line);
+  display: inline-flex; align-items: center; justify-content: center; background: var(--paper);
+}
+.task.done .box { background: var(--done); border-color: var(--done); }
+.task.done .box::after { content: ''; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.task-title { flex: 1; font-weight: 500; }
+.task.done .task-title { color: var(--sub); }
+.chev { color: var(--sub); font-size: 0.85rem; flex: none; }
+.task-head[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.task-body { display: none; padding: 2px 16px 16px 48px; }
+.task-head[aria-expanded="true"] + .task-body { display: block; }
+.task-body p { margin: 0 0 8px; font-size: 0.93rem; }
+.task-body ol { margin: 0 0 10px; padding-left: 20px; font-size: 0.92rem; }
+.task-body ol li { margin: 3px 0; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
+a.link-btn {
+  display: inline-block; font-size: 0.88rem; font-weight: 500; text-decoration: none; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; background: var(--soft);
+}
+a.link-btn:hover { border-color: var(--ink); }
+.evidence { border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 8px; }
+.evidence .ev-label { font-size: 0.85rem; font-weight: 700; }
+.ev-msg { font-size: 0.83rem; color: var(--sub); }
+.ev-msg.bad { color: var(--web); }
+.confirm-list { margin: 0; padding-left: 18px; font-size: 0.92rem; }
+button.small { font: inherit; font-size: 0.9rem; font-weight: 700; border-radius: 4px; padding: 7px 14px; cursor: pointer; border: 1px solid var(--ink); background: var(--paper); color: var(--ink); justify-self: start; }
+button.small.on { background: var(--done); border-color: var(--done); color: #fff; }
+.empty-fields { color: var(--sub); background: var(--soft); border-radius: 6px; padding: 14px 16px; font-size: 0.93rem; }
+
+textarea.code, .task-body code { font-family: 'SFMono-Regular', Consolas, 'D2Coding', monospace; font-size: 0.88rem; }
+textarea.code { min-height: 90px; white-space: pre; overflow-x: auto; }
+.task-body li.code-line { list-style: none; counter-increment: list-item 0; margin-left: -20px; }
+.task-body code { display: inline-block; background: var(--soft); border-radius: 3px; padding: 2px 8px; white-space: pre; }
+.roadmap { margin-top: 18px; }
+.road-row { display: grid; grid-template-columns: 64px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 0.92rem; }
+.road-row b { font-weight: 700; }
+.road-row.last b { color: var(--web); }
+.review { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+.review .lab { margin: 6px 0 0; }
+.review label[for="rv5"], .review #rv5 { grid-column: 1 / -1; }
+.review label { order: 0; }
+.rv-result { margin-top: 14px; }
+.rv-result:empty { display: none; }
+.rv-box { background: var(--soft); border-radius: 6px; padding: 12px 16px; font-size: 0.93rem; }
+.rv-box b { display: block; margin-bottom: 4px; }
+.rv-box ul { margin: 4px 0 0; padding-left: 18px; }
+.tag { flex: none; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: var(--soft); color: var(--sub); }
+.tag.rec { background: var(--mark); color: var(--mark-ink); }
+.reason { font-size: 0.85rem; color: var(--sub); margin: 0 0 8px; }
+@media (max-width: 640px) { .review { grid-template-columns: 1fr; } }
+/* prep */
+.prep .task-head { padding: 10px 14px; }
+.dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--sub); margin: 0 7px; }
+
+.bar {
+  position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper); border-top: 1px solid var(--line);
+  padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.bar-in { max-width: 760px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+.bar .saved { color: var(--sub); font-size: 0.82rem; flex: 1; }
+button.primary, button.ghost { font: inherit; font-weight: 700; border-radius: 6px; padding: 11px 20px; cursor: pointer; border: none; }
+button.primary { background: var(--ink); color: var(--paper); }
+button.ghost { background: transparent; color: var(--sub); border: 1px solid var(--line); font-weight: 500; }
+
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; align-items: center; justify-content: center; padding: 18px; z-index: 30; }
+.modal.on { display: flex; }
+.modal-box { background: var(--paper); border-radius: 8px; max-width: 560px; width: 100%; max-height: 92vh; overflow: auto; padding: 18px; }
+.modal-box img { width: 100%; border: 1px solid var(--line); border-radius: 4px; display: block; }
+.modal-box p { font-size: 0.88rem; color: var(--sub); margin: 10px 0; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+  .sheet { padding: 20px 16px 24px; }
+  h1 { font-size: 1.45rem; }
+  .who { grid-template-columns: 1fr 1fr; }
+  .who .date { grid-column: 1 / -1; }
+  .fields { grid-template-columns: 1fr; }
+  .task-body { padding-left: 16px; }
+  .bar .saved { display: none; }
+  .bar-in button { flex: 1; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-btn { transition: border-color .15s, background .15s; }
+  .progress .fill { transition: width .3s; }
+  .chev { transition: transform .15s; }
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/sheet.css?v=20261125j">
+</head>
+<body>
+<main>
+  <div class="sheet">
+    <h1>AI 프로젝트 멘토링 <mark>활동지</mark></h1>
+    <p class="goal">이번 주는 파이썬 실전노트로 내 분야의 코드를 만들기 시작해요. 코드는 직접 쓰고 # 주석으로 설명을 달아요. 최종 웹앱은 선생님이 AI로 만들어 주고, 최종 결과는 11월 마지막 주에 발표해요.</p>
+
+    <div class="who">
+      <div><label for="sid">학번</label><input type="text" id="sid" inputmode="numeric" autocomplete="off"></div>
+      <div><label for="sname">이름</label><input type="text" id="sname" autocomplete="off"></div>
+      <div class="date"><label for="sdate">일자</label><input type="date" id="sdate"></div>
+    </div>
+
+    <section>
+      <h2><span class="n">1</span>지난주 코드 돌아보기</h2>
+      <p class="hint">지난주에 직접 써 본 코드를 떠올리며 솔직하게 골라요. 답에 따라 나에게 필요한 보강 할 일이 정해져요.</p>
+      <div class="review">
+        <label class="lab" for="rv1">코드가 실행됐나요?</label>
+        <select id="rv1"><option value="">골라 주세요</option><option>오류 없이 실행됐어요</option><option>오류가 났지만 고쳤어요</option><option>오류를 아직 못 고쳤어요</option><option>아직 안 해 봤어요</option></select>
+        <label class="lab" for="rv2">가장 많이 본 오류는?</label>
+        <select id="rv2"><option value="">골라 주세요</option><option>없었어요</option><option>SyntaxError (따옴표·괄호·콜론)</option><option>IndentationError (들여쓰기)</option><option>NameError (이름·실행 순서)</option><option>기타 오류</option></select>
+        <label class="lab" for="rv3">예시를 내 주제로 바꿨나요?</label>
+        <select id="rv3"><option value="">골라 주세요</option><option>내 주제로 바꿨어요</option><option>일부만 바꿨어요</option><option>예시 그대로예요</option></select>
+        <label class="lab" for="rv4">코드에 # 주석을 달았나요?</label>
+        <select id="rv4"><option value="">골라 주세요</option><option>주석을 달았어요</option><option>조금 달았어요</option><option>안 달았어요</option></select>
+        <label class="lab" for="rv5">막혔던 점 (선택)</label>
+        <input type="text" id="rv5" placeholder="예) 들여쓰기를 어디까지 해야 하는지 헷갈렸어요">
+      </div>
+      <div class="rv-result" id="rvResult" role="status"></div>
+    </section>
+
+    <section>
+      <h2><span class="n">2</span>AI에게 피드백 받기</h2>
+      <p class="hint">지난주(3주차)에 저장한 활동지 이미지로 AI에게 피드백을 받아요.</p>
+      <ol class="steps-mini">
+        <li>Gemini나 ChatGPT를 열어요.
+          <span class="ai-links">
+            <a class="link-btn" href="https://gemini.google.com" target="_blank" rel="noopener">Gemini 열기 ↗</a>
+            <a class="link-btn" href="https://chatgpt.com" target="_blank" rel="noopener">ChatGPT 열기 ↗</a>
+          </span>
+        </li>
+        <li>지난주 활동지 이미지를 올리고, 아래 프롬프트를 복사해서 함께 보내요.</li>
+        <li>AI의 답을 복사해서 아래 칸에 붙여 넣어요.</li>
+      </ol>
+      <div class="prompt-box">
+        <textarea id="promptText" readonly aria-label="추천 프롬프트">첨부한 이미지는 내가 고등학교 1학년 AI 프로젝트 멘토링에서 지난주에 작성한 활동지야. 최종 결과 발표일은 11월 마지막 주야. 코드는 내가 파이썬으로 직접 쓰고, 최종 웹앱은 선생님이 AI로 만들어 줄 거야. 이번 주는 내 분야의 코드를 만들기 시작하는 단계야.
+
+아래 5가지를 고등학생이 이해하기 쉽게 12줄 이내로 짧게 피드백해 줘.
+
+1. 지난주에 정한 설계(입력·처리·출력, 설문, 규칙, 캠페인 내용)에서 빠졌거나 고칠 점
+2. 이번 주에 코드를 만들 때 작은 것부터 할 순서 3단계
+3. 개인정보나 윤리적으로 다시 확인할 점
+4. 코드를 만들다 막힐 만한 부분과 그때 확인할 것
+5. 이 프로젝트에서 내가 직접 파이썬으로 코딩해 볼 만한 부분 1가지
+코드나 완성본을 대신 만들어 주지 말고, 내가 스스로 생각해 볼 질문도 1개 해 줘.</textarea>
+        <div class="copy"><button type="button" class="small" id="copyBtn">프롬프트 복사</button><span class="copied" id="copyMsg" role="status"></span></div>
+      </div>
+      <label class="lab" for="aiFeedback">AI의 피드백 붙여 넣기</label>
+      <textarea id="aiFeedback" style="min-height:130px" placeholder="AI가 준 답을 여기에 붙여 넣어요"></textarea>
+      <label class="lab" for="reflect" style="margin-top:10px">그중 내가 반영할 것 한 가지</label>
+      <input type="text" id="reflect" placeholder="예) 사진을 20장에서 10장으로 줄이기">
+    </section>
+
+    <section>
+      <h2><span class="n">3</span>나의 분야와 주제</h2>
+      <p class="hint">내 분야를 다시 골라요. 고른 분야의 할 일이 아래에 나와요.</p>
+      <div class="fields">
+        <button type="button" class="field-btn" data-f="data" aria-pressed="false"><strong>① 데이터 분석</strong><span>설문을 모아 평균·순위를 구하고 그래프로 보여주기</span></button>
+        <button type="button" class="field-btn" data-f="web" aria-pressed="false"><strong>② 미니 웹앱</strong><span>파이썬으로 규칙을 만들고, 웹앱으로 보여주기</span></button>
+        <button type="button" class="field-btn" data-f="sec" aria-pressed="false"><strong>③ AI 윤리·보안</strong><span>보안·개인정보 문제점과 해결 방법을 알리는 캠페인</span></button>
+      </div>
+      <div class="msg" id="fieldMsg" role="status"></div>
+      <label class="lab" for="topic" style="margin-top:6px">나의 주제 (한 문장으로)</label>
+      <input type="text" id="topic" placeholder="예) 우리 반은 AI 사진을 얼마나 잘 구별할까?">
+    </section>
+
+    <section>
+      <h2><span class="n">4</span>이번 주 할 일</h2>
+      <p class="hint">1번 답에 따라 <b>보강 할 일</b>이 추천되고, 그 아래에 분야별 할 일이 나와요. 할 일을 누르면 방법과 링크가 나오고, 맨 아래 칸을 채우면 체크가 저절로 돼요.</p>
+      <div class="progress"><span id="progText">할 일 0개 중 0개 완료</span><span class="track"><span class="fill" id="progFill"></span></span></div>
+      <div id="tasks"></div>
+    </section>
+
+    <section>
+      <h2><span class="n">5</span>다음 주에 해야 할 일 미리 준비하기</h2>
+      <p class="hint">미리 해 두면 다음 주에 훨씬 빠르게 진행할 수 있어요.</p>
+      <div id="prep" class="prep"></div>
+      <div class="roadmap" id="roadmap"></div>
+      <label class="lab" for="ask" style="margin-top:14px">막힌 점이나 선생님께 질문 (선택)</label>
+      <textarea id="ask" placeholder="예) 구글폼에서 이메일 수집을 끄는 방법을 모르겠어요"></textarea>
+    </section>
+  </div>
+</main>
+
+<div class="bar"><div class="bar-in">
+  <span class="saved">쓰는 내용은 공유방에 자동으로 저장돼요</span>
+  <button type="button" class="ghost" id="resetBtn">새로 쓰기</button>
+  <button type="button" class="primary" id="saveBtn">제출하기</button>
+</div></div>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
+    <h2 id="modalTitle" style="margin-bottom:10px">제출 완료</h2>
+    <img id="preview" alt="작성한 활동지 이미지">
+    <p id="modalNote">휴대폰에서는 이미지를 길게 눌러 사진에 저장할 수도 있어요.</p>
+    <div class="modal-actions">
+      <button type="button" class="ghost" id="closeBtn">닫기</button>
+      <button type="button" class="primary" id="dlBtn">이미지로 받기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const FIELDS = {
+  data: { name: '① 데이터 분석', color: '#18804F' },
+  web:  { name: '② 미니 웹앱', color: '#C75A1E' },
+  sec:  { name: '③ AI 윤리·보안', color: '#6A4FB3' },
+};
+
+const RE_FORM = /^https?:\/\/(forms\.gle\/|docs\.google\.com\/forms\/)\S+/i;
+const RE_PAGES = /^https?:\/\/[a-z0-9-]+\.github\.io(\/\S*)?$/i;
+const RE_GHID = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
+const RE_REPO = /^[A-Za-z0-9._-]{1,100}$/;
+
+/* 할 일 정의
+   ev.type: text(입력 1개) / multi(여러 개 중 need개 이상, 칸마다 re 가능) / date / select / confirm(확인 버튼) / done(했어요 버튼) */
+const NOTEBOOK_URL = '';   // 선생님이 공유한 Colab 노트 링크를 여기에 넣어요
+const NB_LINKS = NOTEBOOK_URL ? [{ label: '파이썬 실전노트 열기', url: NOTEBOOK_URL }] : [{ label: 'Colab 열기', url: 'https://colab.research.google.com' }];
+const NB_HINT = NOTEBOOK_URL ? '' : ' (선생님이 공유한 노트 링크로 열어요)';
+
+const TASKS = {
+  common: [
+    { id: 'c1', title: '파이썬 실전노트의 "0. 기초 다지기" 실행하기',
+      desc: '선생님이 공유한 Colab 노트를 열고, 0-1부터 0-5까지 위에서부터 차례로 실행해요.' + NB_HINT,
+      steps: ['노트를 열고 "Drive에 사본 저장"을 눌러 내 노트로 만들어요.', '코드 칸을 누르고 ▶ 또는 Shift + Enter로 실행해요.', '설명을 읽으면서 리스트, 딕셔너리, 반복문, 조건문, 함수를 익혀요.'],
+      links: NB_LINKS,
+      ev: { type: 'text', k: 'out', label: '0-1 칸을 실행했을 때 마지막 줄에 나온 숫자', ph: '숫자 하나', min: 1, re: /^2$/, bad: '0-1 칸의 실행 결과에서 맨 마지막 줄을 다시 확인해 봐요' } },
+    { id: 'c2', title: '직접 코딩: 함수 바꾸고 주석 달기',
+      desc: '0-5의 ✏️ 바꿔 보기를 해요. grade 함수에 "70점 이상이면 C, 그 아래는 D" 규칙을 추가하고, 코드 위에 # 주석으로 설명을 달아요.',
+      steps: ['elif를 어디에 넣어야 할지 생각해요. 높은 점수부터 확인해야 해요.', '함수 위에 # [무엇을] [입력] [출력] 주석을 달아요.', 'grade(65)를 실행해서 결과를 확인해요.'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 2, label: '내가 쓴 코드와 grade(65)의 결과', items: [
+        { k: 'code', ph: '내가 쓴 코드 붙여 넣기 (def, 70, # 주석이 들어가야 해요)', area: true, code: true, re: /^(?=[\s\S]*\bdef\s)(?=[\s\S]*\b70\b)(?=[\s\S]*#)/ },
+        { k: 'res', ph: 'grade(65)의 실행 결과', re: /^'?D'?$/i } ] } },
+    { id: 'c3', title: '나의 주제: 입력 → 처리 → 출력 정리하기',
+      desc: '노트 맨 끝 "⭐ 나의 주제 해 보기"의 구현할 내용 표를 채우고, 여기에도 적어요. 5주차에 이 설계대로 내 주제의 코드를 완성해요.',
+      steps: ['입력: 어떤 데이터나 값을 받나요? (예: 설문 CSV, 기온, O/X 답)', '처리: 어떤 계산이나 규칙을 쓰나요? (예: 장소별 평균, 기온별 옷 규칙, 채점)', '출력: 무엇을 보여주나요? (예: 그래프와 결과 문장, 추천 옷, 점수와 해설)'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 3, label: '내 프로그램의 설계', items: [
+        { k: 'in', ph: '입력 (예: 설문 CSV 파일)' }, { k: 'proc', ph: '처리 (예: 장소별 평균 공부 시간 구하기)' }, { k: 'out', ph: '출력 (예: 막대그래프와 결과 문장)' } ] } },
+  ],
+  data: [
+    { id: 'd1', title: '설문 배포하고 응답 모으기',
+      desc: '지난주에 만든 구글폼을 반 단톡방에 올리고, 지금까지 모인 응답 수와 마감일을 적어요. 응답은 5주차 전까지 모아요.',
+      steps: ['단톡방에 링크와 함께 "익명 설문이에요, 1분이면 끝나요!" 같은 한마디를 올려요.', '구글폼 "응답" 탭에서 지금까지 모인 응답 수를 확인해요.', '마감일이 되면 "응답 받기"를 꺼요.'],
+      links: [{ label: '구글폼 열기', url: 'https://docs.google.com/forms/' }],
+      ev: { type: 'multi', need: 2, label: '응답 현황', items: [
+        { k: 'n', ph: '지금까지 모인 응답 수 (숫자)', re: /^\d+$/ }, { k: 'due', ph: '응답 마감일 (예: 11월 18일)', re: /\d/ } ] } },
+    { id: 'd2', title: '실전노트 1-1 ~ 1-4 실행하기',
+      desc: '연습 파일로 불러오기, 살펴보기, 열 이름 바꾸기, 정리하기를 차례로 실행해요. 설명을 읽으면서 각 줄이 무슨 일을 하는지 확인해요.',
+      steps: ['1-1은 ▶만 눌러 연습 파일을 만들어요.', '1-2 ~ 1-4를 순서대로 실행해요.', '1-4에서 이상한 답이 어떻게 정리되는지 살펴봐요.'],
+      links: NB_LINKS,
+      ev: { type: 'text', k: 'n', label: '1-4 칸의 결과에서 "몇 명으로 분석해요"에 나온 숫자', ph: '숫자 하나', min: 1, re: /^25$/, bad: '1-4 칸의 실행 결과 마지막 줄을 다시 확인해 봐요' } },
+    { id: 'd3', opt: true, title: '내 설문 응답 불러와 정리하기',
+      desc: '지금까지 모인 내 설문 응답을 CSV로 내려받아 Colab에 올리고, 1-2 ~ 1-4처럼 불러와 정리해요. 응답이 적어도 괜찮아요. 코드 위에는 # 주석을 달아요. AI 사진 구별처럼 정답이 있는 설문이면 1-B도 함께 봐요.',
+      steps: ['구글폼 "응답" 탭 → "Sheets에 연결" → 파일 → 다운로드 → CSV', 'Colab 왼쪽 📁 아이콘 → 파일 올리기', "pd.read_csv('내파일이름.csv')로 불러오고, 열 이름 바꾸기와 정리하기를 내 질문에 맞게 고쳐요.", 'print(df.shape)로 행과 열 개수를 확인해요.'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 2, label: '내가 쓴 코드와 df.shape 결과', items: [
+        { k: 'code', ph: '내가 쓴 코드 붙여 넣기 (read_csv가 들어가야 해요)', area: true, code: true, re: /read_csv/ },
+        { k: 'shape', ph: 'df.shape 결과 (예: (12, 4))', re: /\(\s*\d+\s*,\s*\d+\s*\)/ } ] } },
+  ],
+  web: [
+    { id: 'w1', title: '실전노트 2-1 ~ 2-4 실행하기',
+      desc: '규칙 표, 조언 더하기, 입력 받기, 테스트를 차례로 실행해요. 2-3에서는 일부러 "15도"를 먼저 넣어 보고 무슨 일이 일어나는지 확인해요.',
+      steps: ['2-1 ~ 2-4를 순서대로 실행해요.', '🤔 생각해 보기: RULES 순서를 뒤집으면 30도일 때 무엇이 나오는지 확인해요.'],
+      links: NB_LINKS,
+      ev: { type: 'text', k: 'out', label: '2-4 칸을 실행했을 때 나온 문장', ph: '실행 결과 그대로 적기', re: /테스트\s*통과/, bad: '2-4 칸의 실행 결과를 그대로 적어요' } },
+    { id: 'w2', title: 'RULES를 내 규칙 표로 바꾸기',
+      desc: '지난주에 만든 규칙 표로 RULES를 바꿔요. 기준이 높은 것부터 적어야 해요. 코드 위에는 # 주석을 달아요.',
+      steps: ['(기준, 결과) 쌍을 3개 이상 넣어요.', '어떤 규칙에도 맞지 않을 때 나올 DEFAULT도 정해요.', '여러 값을 넣어 결과가 맞게 나오는지 확인해요.'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 2, label: '내 RULES 코드와 실행 결과', items: [
+        { k: 'code', ph: '내 RULES 코드 붙여 넣기 (규칙 3개 이상)', area: true, code: true, re: /RULES\s*=\s*\[[\s\S]*\([\s\S]*\([\s\S]*\(/ },
+        { k: 'res', ph: '값 하나를 넣었을 때 결과 (예: 15도 → 자켓)' } ] } },
+    { id: 'w3', opt: true, title: '내 규칙 테스트 만들기',
+      desc: '2-4처럼 assert로 내 규칙을 시험해요. 규칙이 바뀌는 경계값과 그 바로 아래 값을 꼭 넣어요.',
+      steps: ['assert를 3개 이상 써요.', '각 assert 위에 무엇을 확인하는지 # 주석을 달아요.', '실패하면 규칙이 틀린 건지, 테스트가 틀린 건지 따져 봐요.'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 2, label: '내 테스트 코드와 실행 결과', items: [
+        { k: 'code', ph: '테스트 코드 붙여 넣기 (assert 3개 이상)', area: true, code: true, re: /assert[\s\S]*assert[\s\S]*assert/ },
+        { k: 'res', ph: '실행 결과 (예: 모든 테스트 통과!)', re: /통과/ } ] } },
+  ],
+  sec: [
+    { id: 's1', title: '실전노트 3-1 ~ 3-4 실행하기',
+      desc: '문제 만들기, O/X 입력, 퀴즈 실행, 결과 메시지를 차례로 실행해요. 퀴즈를 직접 풀어 보면서 친구 입장에서 어떤지 느껴 봐요.',
+      steps: ['3-1 ~ 3-4를 순서대로 실행해요.', '3-2에서 일부러 엉뚱한 글자를 넣어 보고 무슨 일이 일어나는지 확인해요.'],
+      links: NB_LINKS,
+      ev: { type: 'text', k: 'out', label: '3-4 칸 결과의 첫 줄', ph: '예) 5문제 중 3문제 정답 (60%)', re: /\d+\s*문제\s*중\s*\d+\s*문제/, bad: '3-4 칸의 결과 첫 줄을 그대로 적어요' } },
+    { id: 's2', title: '퀴즈를 내 캠페인 문제 5개로 바꾸기',
+      desc: '3-1의 quiz를 내 캠페인 주제로 바꿔요. 해설(why)에는 지난주에 조사한 해결 방법을 넣어요. 코드 위에는 # 주석을 달아요.',
+      steps: ["문제마다 'q'(질문), 'a'(정답 O/X), 'why'(해설)를 넣어요.", 'O 문제와 X 문제를 섞어요.', '3-3을 다시 실행해서 내 문제로 퀴즈가 나오는지 확인해요.'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 1, label: '내 quiz 코드', items: [
+        { k: 'code', ph: '내 quiz 코드 붙여 넣기 (문제 5개)', area: true, code: true, re: /(?:['"]q['"][\s\S]*?){5}/ } ] } },
+    { id: 's3', opt: true, title: '결과 메시지를 내 캠페인에 맞게 바꾸기',
+      desc: '3-4의 result_message 함수에서 점수별 메시지를 내 캠페인에 맞게 바꿔요. 점수가 낮은 친구에게 무엇을 하면 되는지 알려 주는 게 중요해요.',
+      steps: ['100점, 60% 이상, 그 아래의 메시지를 바꿔요.', '함수 위에 # [무엇을] [입력] [출력] 주석을 달아요.'],
+      links: NB_LINKS,
+      ev: { type: 'multi', need: 2, label: '내 코드와 캠페인 문구', items: [
+        { k: 'code', ph: 'result_message 코드 붙여 넣기', area: true, code: true, re: /def\s+result_message[\s\S]*return/ },
+        { k: 'slogan', ph: '내 캠페인 대표 문구 한 줄' } ] } },
+  ],
+};
+
+const PREP = {
+  data: [
+    { title: '4주차 노트의 "다음 주 미리 보기" 읽어 보기',
+      desc: '노트 맨 끝에 있어요. 다음 주에는 세기, 그룹별 평균, 교차표, 그래프, 결과 문장을 내 설문에 적용해요.', links: NB_LINKS },
+    { title: '응답 마감하고 CSV 다시 내려받기',
+      desc: '마감일이 되면 "응답 받기"를 끄고, 최종 응답을 CSV로 내려받아 둬요.',
+      links: [{ label: '구글폼 열기', url: 'https://docs.google.com/forms/' }] },
+    { title: '결과로 말하고 싶은 것 한 문장 적어 오기',
+      desc: '예) "학원에 가는 친구가 가장 많지만, 공부 시간은 독서실이 가장 길다." 이 문장을 확인할 그래프를 생각해 와요.', links: [] },
+  ],
+  web: [
+    { title: '4주차 노트의 "다음 주 미리 보기" 읽어 보기',
+      desc: '노트 맨 끝에 있어요. 다음 주에는 실제 날씨 같은 바깥 데이터 가져오기와 실행 구조 보여주기를 해요.', links: NB_LINKS },
+    { title: '실행 구조 전개도 종이에 그려 오기',
+      desc: '입력 → (데이터 요청) → 받은 값 → 규칙 → 출력 순서로 그려요. 발표 때 작동 원리를 설명하는 자료가 돼요.', links: [] },
+    { title: '선생님께 전달할 화면 설명 확정하기',
+      desc: '실전노트 맨 끝 "선생님께 전달할 내용" 표를 채워요. 다음 주에 선생님이 이걸 보고 웹앱 첫 버전을 만들어요.', links: NB_LINKS },
+  ],
+  sec: [
+    { title: '4주차 노트의 "다음 주 미리 보기" 읽어 보기',
+      desc: '노트 맨 끝에 있어요. 다음 주에는 여러 명의 퀴즈 결과를 분석해서 가장 많이 틀린 문제를 찾아요.', links: NB_LINKS },
+    { title: '친구 3명에게 내 퀴즈 풀게 하기',
+      desc: '내 퀴즈를 친구에게 풀게 하고, 헷갈려한 문제와 해설을 고쳐 와요.', links: [] },
+    { title: '선생님께 전달할 화면 설명 확정하기',
+      desc: '실전노트 맨 끝 "선생님께 전달할 내용" 표를 채워요. 다음 주에 선생님이 이걸 보고 캠페인 웹앱 첫 버전을 만들어요.', links: NB_LINKS },
+  ],
+};
+
+const ROADMAP = {
+  data: [['4주차', '지금: 설문 배포, 실전노트 1-1~1-4, 내 설문 불러와 정리하기'],
+         ['5주차', '실전노트 1-5~1-9 (세기, 그래프, 결과 문장) · ⭐ 나의 주제에 적용 · 선생님이 만든 웹앱 확인'],
+         ['발표', '선생님이 만든 웹앱으로 분석 결과 발표하기']],
+  web:  [['4주차', '지금: 실전노트 2-1~2-4, 내 규칙 표로 바꾸고 테스트하기'],
+         ['5주차', '실전노트 2-5~2-6 (바깥 데이터, 실행 구조) · 선생님이 만든 웹앱 확인하고 고칠 점 요청'],
+         ['발표', '웹앱으로 시연하고 실행 구조 설명하기']],
+  sec:  [['4주차', '지금: 실전노트 3-1~3-4, 내 캠페인 문제와 메시지로 바꾸기'],
+         ['5주차', '실전노트 3-5 (여러 명 결과 분석) · 선생님이 만든 캠페인 웹앱 확인하고 고칠 점 요청'],
+         ['발표', '캠페인 웹앱으로 발표하기']],
+};
+
+const KEY = SheetBridge.key('mentoring-week4-v2');
+const $ = id => document.getElementById(id);
+let state = { picked: [], ev: {}, confirm: {}, done: {}, open: {} };
+let lastBlob = null, lastName = '';
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function fmtDate(v) { if (!v) return ''; const [y,m,d] = v.split('-'); return `${Number(m)}월 ${Number(d)}일`; }
+const evKey = (t, k) => t.id + '.' + k;
+const getEv = (t, k) => (state.ev[evKey(t, k)] || '').trim();
+
+function isDone(t) {
+  const e = t.ev;
+  if (e.type === 'text') { const v = getEv(t, e.k); return v.length >= (e.min || 2) && (!e.re || e.re.test(v)); }
+  if (e.type === 'multi') return e.items.filter(i => { const v = getEv(t, i.k); return v.length >= 1 && (i.re ? i.re.test(v) : v.length >= 2); }).length >= e.need;
+  if (e.type === 'date' || e.type === 'select') return !!getEv(t, e.k);
+  if (e.type === 'confirm') return !!state.confirm[t.id];
+  if (e.type === 'done') return !!state.done[t.id];
+  return false;
+}
+function evSummary(t) {
+  const e = t.ev;
+  if (e.type === 'text' || e.type === 'select') return getEv(t, e.k);
+  if (e.type === 'date') return fmtDate(getEv(t, e.k));
+  if (e.type === 'multi') return e.items.map(i => getEv(t, i.k)).filter(Boolean).join(' / ');
+  if (e.type === 'confirm') return state.confirm[t.id] ? '모두 확인함' : '';
+  if (e.type === 'done') return state.done[t.id] ? '완료' : '';
+  return '';
+}
+
+function looksCode(s) { return /^(\s*)(answers|print|answer|temp|if |elif |else:|import|df |def )/.test(s) || /^\s{4}(print|return)/.test(s); }
+function linksHTML(links) {
+  if (!links || !links.length) return '';
+  return '<div class="links">' + links.map(l => `<a class="link-btn" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a>`).join('') + '</div>';
+}
+function evidenceHTML(t) {
+  const e = t.ev; const val = k => esc(state.ev[evKey(t, k)] || '');
+  let h = `<div class="evidence"><span class="ev-label">${esc(e.label)}</span>`;
+  if (e.type === 'text') {
+    h += `<input type="text" data-ev="${evKey(t, e.k)}" value="${val(e.k)}" placeholder="${esc(e.ph || '')}" aria-label="${esc(e.label)}">`;
+    if (e.suggest) h += `<span class="ev-msg" data-suggest="${t.id}"></span>`;
+    h += `<span class="ev-msg" data-msg="${t.id}"></span>`;
+  } else if (e.type === 'multi') {
+    h += e.items.map(i => i.area
+      ? `<textarea class="${i.code ? 'code' : ''}" data-ev="${evKey(t, i.k)}" placeholder="${esc(i.ph)}" aria-label="${esc(i.ph)}" spellcheck="false">${val(i.k)}</textarea>`
+      : `<input type="text" data-ev="${evKey(t, i.k)}" value="${val(i.k)}" placeholder="${esc(i.ph)}" aria-label="${esc(i.ph)}">`).join('');
+  } else if (e.type === 'date') {
+    h += `<input type="date" data-ev="${evKey(t, e.k)}" value="${val(e.k)}" aria-label="${esc(e.label)}">`;
+  } else if (e.type === 'select') {
+    h += `<select data-ev="${evKey(t, e.k)}" aria-label="${esc(e.label)}"><option value="">골라 주세요</option>` +
+      e.options.map(o => `<option${state.ev[evKey(t, e.k)] === o ? ' selected' : ''}>${esc(o)}</option>`).join('') + '</select>';
+  } else if (e.type === 'confirm') {
+    h += '<ul class="confirm-list">' + e.items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul>';
+    h += `<button type="button" class="small${state.confirm[t.id] ? ' on' : ''}" data-confirm="${t.id}">${state.confirm[t.id] ? '✓ 모두 확인했어요' : '모두 확인했어요'}</button>`;
+  } else if (e.type === 'done') {
+    h += `<button type="button" class="small${state.done[t.id] ? ' on' : ''}" data-done="${t.id}">${state.done[t.id] ? '✓ ' + esc(e.btn) : esc(e.btn)}</button>`;
+  }
+  return h + '</div>';
+}
+function taskHTML(t, tag, reason) {
+  const open = !!state.open[t.id];
+  return `<div class="task${isDone(t) ? ' done' : ''}" id="task-${t.id}">
+    <button type="button" class="task-head" data-toggle="${t.id}" aria-expanded="${open}" aria-controls="body-${t.id}">
+      <span class="box" role="img" aria-label="${isDone(t) ? '완료' : '아직'}"></span>
+      <span class="task-title">${esc(t.title)}</span>${tag ? `<span class="tag${tag === '추천' ? ' rec' : ''}">${esc(tag)}</span>` : ''}<span class="chev" aria-hidden="true">▶</span>
+    </button>
+    <div class="task-body" id="body-${t.id}">
+      ${reason ? `<p class="reason">추천 이유: ${esc(reason)}</p>` : ''}
+      <p>${esc(t.desc)}</p>
+      ${t.steps.length ? '<ol>' + t.steps.map(s => looksCode(s) ? `<li class="code-line"><code>${esc(s)}</code></li>` : `<li>${esc(s)}</li>`).join('') + '</ol>' : ''}
+      ${linksHTML(t.links)}
+      ${evidenceHTML(t)}
+    </div></div>`;
+}
+function prepHTML(p, i, f) {
+  const id = 'p-' + f + i; const open = !!state.open[id];
+  return `<div class="task" id="task-${id}">
+    <button type="button" class="task-head" data-toggle="${id}" aria-expanded="${open}" aria-controls="body-${id}">
+      <span class="dot" aria-hidden="true"></span><span class="task-title">${esc(p.title)}</span><span class="chev" aria-hidden="true">▶</span>
+    </button>
+    <div class="task-body" id="body-${id}"><p>${esc(p.desc)}</p>${linksHTML(p.links)}</div></div>`;
+}
+
+const GROUP_NAME = { common: '보강 할 일 (나에게 추천)', data: '① 데이터 분석', web: '② 미니 웹앱', sec: '③ AI 윤리·보안' };
+const GROUP_COLOR = { common: '#333333', data: '#18804F', web: '#C75A1E', sec: '#6A4FB3' };
+function review() {
+  const q = id => $(id).value;
+  const q1 = q('rv1'), q2 = q('rv2'), q3 = q('rv3'), q4 = q('rv4');
+  const answered = !!(q1 && q2 && q3 && q4);
+  const needBasics = ['오류를 아직 못 고쳤어요', '아직 안 해 봤어요'].includes(q1) || /Syntax|Indentation/.test(q2);
+  const needComment = !!q4 && q4 !== '주석을 달았어요';
+  const needOwn = !!q3 && q3 !== '내 주제로 바꿨어요';
+  const reasons = {
+    c1: needBasics ? (/Syntax|Indentation/.test(q2) ? '지난주에 ' + q2.split(' ')[0] + '가 있었어요. 기초 문법을 한 번 더 다져요.' : '지난주 코드를 아직 완성하지 못했어요. 기초부터 차근차근 해요.') : '',
+    c2: needComment ? '지난주 코드에 주석이 부족했어요. 주석 다는 법을 연습해요.' : (needBasics ? '기초를 다지면서 함수와 주석도 함께 연습해요.' : ''),
+    c3: needOwn ? '지난주에 예시를 내 주제로 다 바꾸지 못했어요. 내 프로그램을 먼저 설계해요.' : '',
+  };
+  return { answered, needBasics, reasons, rec: { c1: !!reasons.c1, c2: !!reasons.c2, c3: !!reasons.c3 } };
+}
+function commonPlan() {
+  const r = review();
+  if (!r.answered) return { r, rec: [], opt: TASKS.common };
+  return { r, rec: TASKS.common.filter(t => r.rec[t.id]), opt: TASKS.common.filter(t => !r.rec[t.id]) };
+}
+function isOptional(t) { return !!t.opt && review().needBasics; }
+function groups() { return state.picked; }
+function allTasks() { return [...commonPlan().rec, ...state.picked.flatMap(f => TASKS[f].filter(t => !isOptional(t)))]; }
+function renderReview() {
+  const r = review(), el = $('rvResult');
+  if (!r.answered) { el.innerHTML = ''; return; }
+  const rec = TASKS.common.filter(t => r.rec[t.id]);
+  el.innerHTML = rec.length
+    ? `<div class="rv-box"><b>나에게 추천된 보강 할 일 ${rec.length}개</b>4번 "이번 주 할 일" 맨 위에 나와요.${r.needBasics ? '<br>이번 주는 분야별 할 일 중 마지막 하나는 여유가 있을 때만 해도 돼요.' : ''}<ul>${rec.map(t => `<li>${esc(t.title)}</li>`).join('')}</ul></div>`
+    : '<div class="rv-box"><b>지난주 코드를 잘 해냈어요! 👏</b>보강 할 일 없이 분야별 할 일로 바로 가요.</div>';
+}
+
+function renderTasks() {
+  const box = $('tasks');
+  const gtitle = f => `<div class="group-title" style="color:${f === 'common' ? 'var(--ink)' : `var(--${f})`}">${GROUP_NAME[f]}</div>`;
+  const plan = commonPlan();
+  let html = '';
+  if (!plan.r.answered) {
+    html += '<div class="empty-fields">1번 "지난주 코드 돌아보기"에 답하면 나에게 필요한 보강 할 일이 정해져요.</div>';
+  } else if (plan.rec.length) {
+    html += gtitle('common') + plan.rec.map(t => taskHTML(t, '추천', plan.r.reasons[t.id])).join('');
+  }
+  html += state.picked.map(f => gtitle(f) + TASKS[f].map(t => taskHTML(t, isOptional(t) ? '여유가 있으면' : '')).join('')).join('');
+  if (!state.picked.length) html += '<div class="empty-fields" style="margin-top:12px">3번에서 분야를 고르면 분야별 할 일이 나와요.</div>';
+  if (plan.opt.length) html += '<div class="group-title" style="color:var(--sub)">선택: 필요하면 해 봐요</div>' + plan.opt.map(t => taskHTML(t, '선택')).join('');
+  box.innerHTML = html;
+  renderReview();
+  if (!state.picked.length) {
+    $('prep').innerHTML = '<div class="empty-fields">3번에서 분야를 고르면 다음 주 준비할 일이 여기에 나와요.</div>';
+    $('roadmap').innerHTML = '';
+  } else {
+    $('prep').innerHTML = state.picked.map(f => gtitle(f) + PREP[f].map((p, i) => prepHTML(p, i, f)).join('')).join('');
+    $('roadmap').innerHTML = '<div class="group-title">11월 마지막 주 발표까지의 로드맵</div>' + state.picked.map(f =>
+      `<div class="group-title" style="color:var(--${f});font-size:.92rem;margin-top:10px">${FIELDS[f].name}</div>` +
+      ROADMAP[f].map(([w, d], i, arr) => `<div class="road-row${i === arr.length - 1 ? ' last' : ''}"><b>${esc(w)}</b><span>${esc(d)}</span></div>`).join('')).join('');
+  }
+  [...TASKS.common, ...state.picked.flatMap(f => TASKS[f])].forEach(updateMsgs);
+  renderProgress();
+}
+function renderProgress() {
+  const ts = allTasks(); const n = ts.filter(isDone).length;
+  $('progText').textContent = `할 일 ${ts.length}개 중 ${n}개 완료`;
+  $('progFill').style.width = ts.length ? (n / ts.length * 100) + '%' : '0';
+}
+function refreshTask(t) {
+  if (!t) return;
+  const el = $('task-' + t.id); if (!el) return;
+  const d = isDone(t);
+  el.classList.toggle('done', d);
+  el.querySelector('.box').setAttribute('aria-label', d ? '완료' : '아직');
+  updateMsgs(t); renderProgress();
+}
+function updateMsgs(t) {
+  const e = t.ev; if (e.type !== 'text') return;
+  const m = document.querySelector(`[data-msg="${t.id}"]`);
+  const v = getEv(t, e.k);
+  if (m) { const bad = v && e.re && !e.re.test(v); m.textContent = bad ? e.bad : ''; m.classList.toggle('bad', !!bad); }
+  const s = document.querySelector(`[data-suggest="${t.id}"]`);
+  if (s) {
+    const id = (state.ev['w1.ghid'] || '').trim(), repo = (state.ev['w2.repo'] || '').trim();
+    s.textContent = id && repo && RE_GHID.test(id) ? `내 주소는 아마 https://${id.toLowerCase()}.github.io/${repo}/ 일 거예요` : '';
+  }
+}
+function findTask(id) { for (const f in TASKS) { const t = TASKS[f].find(x => x.id === id); if (t) return t; } return null; }
+
+/* events */
+document.querySelectorAll('.field-btn').forEach(b => b.addEventListener('click', () => {
+  const f = b.dataset.f; $('fieldMsg').textContent = '';
+  if (state.picked.includes(f)) state.picked = state.picked.filter(x => x !== f);
+  else if (state.picked.length >= 2) { $('fieldMsg').textContent = '최대 2개까지 고를 수 있어요. 하나를 먼저 해제해 주세요.'; return; }
+  else state.picked.push(f);
+  renderFields(); renderTasks(); save();
+}));
+function renderFields() { document.querySelectorAll('.field-btn').forEach(b => b.setAttribute('aria-pressed', state.picked.includes(b.dataset.f))); }
+
+document.addEventListener('click', e => {
+  const tg = e.target.closest('[data-toggle]');
+  if (tg) {
+    const id = tg.dataset.toggle; state.open[id] = !state.open[id];
+    tg.setAttribute('aria-expanded', state.open[id]);
+    if (state.open[id]) { const body = $('body-' + id); requestAnimationFrame(() => body.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })); }
+    save(); return;
+  }
+  const cf = e.target.closest('[data-confirm]');
+  if (cf) { const id = cf.dataset.confirm; state.confirm[id] = !state.confirm[id];
+    cf.classList.toggle('on', state.confirm[id]); cf.textContent = state.confirm[id] ? '✓ 모두 확인했어요' : '모두 확인했어요';
+    refreshTask(findTask(id)); save(); return; }
+  const dn = e.target.closest('[data-done]');
+  if (dn) { const id = dn.dataset.done; const t = findTask(id); state.done[id] = !state.done[id];
+    dn.classList.toggle('on', state.done[id]); dn.textContent = (state.done[id] ? '✓ ' : '') + t.ev.btn;
+    refreshTask(t); save(); }
+});
+document.addEventListener('input', e => {
+  const k = e.target.dataset && e.target.dataset.ev; if (!k) return;
+  state.ev[k] = e.target.value;
+  const t = findTask(k.split('.')[0]); refreshTask(t);
+  save();
+});
+document.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.ev && e.target.tagName === 'SELECT') { state.ev[e.target.dataset.ev] = e.target.value; refreshTask(findTask(e.target.dataset.ev.split('.')[0])); save(); } });
+
+const PLAIN = ['sid','sname','sdate','aiFeedback','reflect','topic','ask','rv1','rv2','rv3','rv4','rv5'];
+['rv1','rv2','rv3','rv4'].forEach(id => $(id).addEventListener('change', () => { renderTasks(); save(); }));
+PLAIN.forEach(id => $(id).addEventListener('input', save));
+
+$('copyBtn').addEventListener('click', async () => {
+  const ta = $('promptText');
+  try { await navigator.clipboard.writeText(ta.value); $('copyMsg').textContent = '복사했어요!'; }
+  catch (e) { ta.focus(); ta.select(); $('copyMsg').textContent = '선택된 글자를 길게 누르거나 Ctrl+C로 복사하세요'; }
+});
+
+function save() {
+  const d = { state: { picked: state.picked, ev: state.ev, confirm: state.confirm, done: state.done, open: state.open } };
+  PLAIN.forEach(id => d[id] = $(id).value);
+  try { localStorage.setItem(KEY, JSON.stringify(d)); } catch (e) {}
+}
+function load() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (d && d.state) {
+    const s = d.state;
+    state.picked = Array.isArray(s.picked) ? s.picked.filter(f => FIELDS[f]).slice(0, 2) : [];
+    state.ev = s.ev && typeof s.ev === 'object' ? s.ev : {};
+    state.confirm = s.confirm || {}; state.done = s.done || {}; state.open = s.open || {};
+    PLAIN.forEach(id => { if (typeof d[id] === 'string') $(id).value = d[id]; });
+  }
+  if (!$('sdate').value) $('sdate').value = today();
+}
+$('resetBtn').addEventListener('click', () => {
+  if (!confirm('지금 쓴 내용을 모두 지우고 새로 쓸까요?')) return;
+  state = { picked: [], ev: {}, confirm: {}, done: {}, open: {} };
+  PLAIN.forEach(id => $(id).value = ''); $('sdate').value = today();
+  try { localStorage.removeItem(KEY); } catch (e) {}
+  renderFields(); renderTasks(); window.scrollTo(0, 0);
+});
+
+/* ---- 이미지 만들기 (캔버스에 직접 그림) ---- */
+const CW = 760, PAD = 40, SCALE = 2;
+const CFONT = "'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif";
+function setFont(ctx, size, bold) { ctx.font = `${bold ? 700 : 400} ${size}px ${CFONT}`; }
+function trimTrail(lines) { const l = lines[lines.length - 1]; while (l.length && l[l.length - 1].space) l.pop(); }
+function layoutRuns(ctx, runs, size, maxW) {
+  const lines = [[]]; let x = 0;
+  for (const run of runs) {
+    setFont(ctx, size, run.bold);
+    if (run.mark && x > 0) x += 4;
+    for (const tok of run.text.split(/(\s+)/).filter(t => t)) {
+      const w = ctx.measureText(tok).width;
+      if (/^\s+$/.test(tok)) { if (x === 0) continue; lines[lines.length - 1].push({ x, w, text: tok, run, space: true }); x += w; continue; }
+      if (x + w > maxW && x > 0) { trimTrail(lines); lines.push([]); x = 0; }
+      if (w > maxW) {
+        for (const ch of tok) { const cw = ctx.measureText(ch).width; if (x + cw > maxW && x > 0) { lines.push([]); x = 0; } lines[lines.length - 1].push({ x, w: cw, text: ch, run }); x += cw; }
+        continue;
+      }
+      lines[lines.length - 1].push({ x, w, text: tok, run }); x += w;
+    }
+    if (run.mark) x += 4;
+  }
+  trimTrail(lines); return lines;
+}
+function drawLines(ctx, lines, x0, y0, size, lineH) {
+  lines.forEach((line, i) => {
+    const mid = y0 + i * lineH + lineH / 2;
+    line.forEach(it => { if (it.run.mark) { ctx.fillStyle = '#FFE36E'; ctx.fillRect(x0 + it.x - 3, mid - size * 0.72, it.w + 6, size * 1.44); } });
+    line.forEach(it => { if (it.space) return; setFont(ctx, size, it.run.bold); ctx.fillStyle = it.run.color || '#1B2130'; ctx.fillText(it.text, x0 + it.x, mid); });
+  });
+  return lines.length * lineH;
+}
+function rrect(ctx, x, y, w, h, r, color) {
+  ctx.fillStyle = color; ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); ctx.fill();
+}
+async function makeImage() {
+  try { await Promise.all([document.fonts.load("400 16px 'IBM Plex Sans KR'", '가'), document.fonts.load("700 16px 'IBM Plex Sans KR'", '가')]); } catch (e) {}
+  const H = 8000;
+  const c = document.createElement('canvas'); c.width = CW * SCALE; c.height = H * SCALE;
+  const ctx = c.getContext('2d'); ctx.scale(SCALE, SCALE);
+  ctx.fillStyle = '#FFFDF7'; ctx.fillRect(0, 0, CW, H);
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  const maxW = CW - PAD * 2, GREY = '#6B6B6B', EMPTY_C = '#B0B0AC';
+  const v = id => $(id).value.trim();
+  const val = s => s ? { text: s } : { text: '(비어 있음)', color: EMPTY_C };
+  let y = 36;
+  const para = (runs, size = 15, lineH = 25, x = PAD, w = maxW) => { y += drawLines(ctx, layoutRuns(ctx, runs, size, w), x, y, size, lineH); };
+  const multiline = (text, size = 14, lineH = 23, color) => {
+    if (!text) { para([val('')], size, lineH); return; }
+    text.split(/\r?\n/).forEach(line => { if (line.trim()) para([{ text: line, color }], size, lineH); else y += lineH * 0.5; });
+  };
+  const box = (fn, padX = 16, padY = 12) => {
+    const startY = y;
+    // draw content to measure height on a temp pass
+    y += padY; const contentStart = y; fn(true); const h = y - contentStart + padY * 2;
+    // repaint: clear area, draw box, draw content again
+    ctx.fillStyle = '#FFFDF7'; ctx.fillRect(PAD - 2, startY, maxW + 4, h + 4);
+    rrect(ctx, PAD, startY, maxW, h, 5, '#FAF7EF');
+    y = startY + padY; fn(false); y = startY + h;
+  };
+  const head = (n, t) => { y += 24; para([{ text: n + '  ', bold: true, color: '#2D5BD0' }, { text: t, bold: true, color: GREY }], 14, 22); y += 4; };
+
+  para([{ text: 'AI 프로젝트 멘토링 ', bold: true }, { text: '활동지', bold: true, mark: true }], 26, 40);
+  y += 12;
+  box(() => para([{ text: '학번  ', color: GREY }, val(v('sid')), { text: '        이름  ', color: GREY }, val(v('sname')),
+    { text: '        일자  ', color: GREY }, val(fmtDate(v('sdate')))], 15, 24, PAD + 14, maxW - 28), 14, 10);
+
+  head('1', '지난주 코드 돌아보기');
+  [['rv1', '실행'], ['rv2', '가장 많이 본 오류'], ['rv3', '내 주제로 바꿨나'], ['rv4', '주석']].forEach(([id, lb]) =>
+    para([{ text: lb + ': ', bold: true }, val(v(id))], 14, 23));
+  if (v('rv5')) para([{ text: '막혔던 점: ', bold: true }, { text: v('rv5') }], 14, 23);
+
+  head('2', 'AI에게 받은 피드백');
+  let fb = v('aiFeedback'); if (fb.length > 1200) fb = fb.slice(0, 1200) + ' …(생략)';
+  box(() => multilineIn(fb), 16, 12);
+  function multilineIn(text) {
+    if (!text) { para([val('')], 14, 23, PAD + 16, maxW - 32); return; }
+    text.split(/\r?\n/).forEach(line => { if (line.trim()) para([{ text: line }], 14, 23, PAD + 16, maxW - 32); else y += 10; });
+  }
+  y += 8;
+  para([{ text: '내가 반영할 것: ', bold: true }, val(v('reflect'))]);
+
+  head('3', '나의 분야와 주제');
+  if (state.picked.length) {
+    let x = PAD;
+    state.picked.forEach(f => {
+      setFont(ctx, 15, true);
+      const w = ctx.measureText(FIELDS[f].name).width + 26;
+      rrect(ctx, x, y, w, 30, 15, FIELDS[f].color);
+      ctx.fillStyle = '#FFFFFF'; ctx.fillText(FIELDS[f].name, x + 13, y + 15); x += w + 8;
+    });
+    y += 38;
+  } else para([val('')]);
+  para([{ text: '주제: ', bold: true }, v('topic') ? { text: v('topic'), mark: true, bold: true } : val('')], 16, 30);
+
+  const ts = allTasks(); const nDone = ts.filter(isDone).length;
+  head('4', `이번 주 할 일 (${ts.length}개 중 ${nDone}개 완료)`);
+  const plan = commonPlan();
+  const imgGroups = [];
+  if (plan.rec.length) imgGroups.push(['common', plan.rec]);
+  state.picked.forEach(f => imgGroups.push([f, TASKS[f]]));
+  const doneOpt = plan.opt.filter(isDone);
+  if (doneOpt.length) imgGroups.push(['opt', doneOpt]);
+  imgGroups.forEach(([f, list]) => {
+    y += 4; para([{ text: f === 'opt' ? '선택 할 일 (스스로 한 것)' : GROUP_NAME[f], bold: true, color: f === 'opt' ? '#6B6B6B' : GROUP_COLOR[f] }], 14, 24);
+    list.forEach(t => {
+      const d = isDone(t), top = y, mid = top + 12.5;
+      ctx.lineWidth = 2; ctx.strokeStyle = d ? '#18804F' : '#C8C8C4';
+      if (d) { rrect(ctx, PAD, mid - 9, 18, 18, 3, '#18804F'); ctx.strokeStyle = '#FFFFFF'; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(PAD + 4.5, mid); ctx.lineTo(PAD + 8, mid + 3.5); ctx.lineTo(PAD + 14, mid - 4); ctx.stroke(); }
+      else { ctx.strokeRect(PAD + 1, mid - 8, 16, 16); }
+      para([{ text: t.title, color: d ? '#1B2130' : GREY, bold: d }, ...(isOptional(t) ? [{ text: '  (여유가 있으면)', color: GREY }] : [])], 15, 25, PAD + 28, maxW - 28);
+      const codeItems = t.ev.type === 'multi' ? t.ev.items.filter(i => i.code) : [];
+      const other = t.ev.type === 'multi' ? t.ev.items.filter(i => !i.code).map(i => getEv(t, i.k)).filter(Boolean).join(' / ') : evSummary(t);
+      if (other) para([{ text: other, color: GREY }], 13, 21, PAD + 28, maxW - 28);
+      codeItems.forEach(i => {
+        const code = (state.ev[evKey(t, i.k)] || '').replace(/\t/g, '    ').split(/\r?\n/).filter(l => l.trim()).slice(0, 12);
+        if (!code.length) return;
+        const lh = 19, bh = code.length * lh + 14;
+        y += 2; rrect(ctx, PAD + 28, y, maxW - 28, bh, 4, '#FAF7EF');
+        ctx.font = "13px 'SFMono-Regular', Consolas, 'D2Coding', 'Malgun Gothic', monospace"; ctx.fillStyle = '#333333';
+        code.forEach((l, j) => ctx.fillText(l, PAD + 40, y + 7 + j * lh + lh / 2, maxW - 52));
+        y += bh + 2;
+      });
+      y += 4;
+    });
+  });
+
+  head('5', '다음 주에 해야 할 일 미리 준비하기');
+  state.picked.forEach(f => PREP[f].forEach(p => para([{ text: '· ' + p.title }], 14, 24)));
+  if (!state.picked.length) para([val('')]);
+  if (v('ask')) { y += 8; para([{ text: '막힌 점·질문: ', bold: true }]); multiline(v('ask'), 14, 23); }
+
+  y += 26;
+  setFont(ctx, 12, false); ctx.fillStyle = '#9A9A96'; ctx.textAlign = 'right';
+  ctx.fillText('AI 프로젝트 멘토링 · 파이썬 코드 공유방 · 4주차', CW - PAD, y); ctx.textAlign = 'left';
+  y += 30;
+
+  const out = document.createElement('canvas'); out.width = CW * SCALE; out.height = Math.ceil(Math.min(y, H) * SCALE);
+  out.getContext('2d').drawImage(c, 0, 0, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+
+$('saveBtn').addEventListener('click', async () => {
+  const btn = $('saveBtn'); btn.disabled = true; btn.textContent = '만드는 중…';
+  try {
+    const canvas = await makeImage();
+    lastBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    const nm = $('sname').value.trim() || '이름없음';
+    lastName = `활동지_${nm}_${$('sdate').value || today()}.png`.replace(/[\\/:*?"<>|]/g, '');
+    $('preview').src = canvas.toDataURL('image/png');
+    const sub = await SheetBridge.submit(canvas); $('modalNote').textContent = sub.msg;
+    $('modal').classList.add('on');
+  } catch (e) { alert('이미지를 만들지 못했어요. 다시 한 번 눌러 주세요.'); }
+  finally { btn.disabled = false; btn.textContent = '제출하기'; }
+});
+let downloads = null;
+(async () => {
+  try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+  if (!downloads) { $('modalNote').textContent = '이미지를 길게 누르거나(휴대폰) 마우스 오른쪽 버튼을 눌러(컴퓨터) 저장하세요.'; }
+})();
+$('dlBtn').addEventListener('click', async () => {
+  if (!lastBlob) return;
+  if (!downloads) { SheetBridge.download(lastBlob, lastName); return; }
+  try { await downloads.save({ filename: lastName, data: lastBlob }); $('modalNote').textContent = '저장했어요!'; }
+  catch (e) {
+    if (e && e.code === 'declined') return;
+    if (e && e.code === 'rate_limited') { $('modalNote').textContent = '잠시 후 다시 눌러 주세요.'; return; }
+    $('modalNote').textContent = '파일 저장이 안 되면 이미지를 길게 누르거나 오른쪽 버튼을 눌러 저장하세요.';
+  }
+});
+function closeModal() { $('modal').classList.remove('on'); $('saveBtn').focus(); }
+$('closeBtn').addEventListener('click', closeModal);
+$('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('modal').classList.contains('on')) closeModal(); });
+
+// 지난주 활동지 불러오기 (sheet-bridge.js 가 불러요): 비어 있는 분야·주제만 채워요. force = true 면 덮어써요
+window.SheetCarry = (c, force) => {
+  const done = [];
+  const pk = (c.picked || []).filter(f => FIELDS[f]).slice(0, 2);
+  if (pk.length && (force || !state.picked.length)) { state.picked = pk; done.push('분야'); }
+  if (c.topic && (force || !$('topic').value.trim())) { $('topic').value = c.topic; done.push('주제'); }
+  if (done.length) { renderFields(); renderTasks(); save(); }
+  return done;
+};
+SheetBridge.start(KEY, () => { load(); renderFields(); renderTasks(); });
+</script>
+</body>
+</html>
