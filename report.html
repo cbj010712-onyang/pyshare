@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>결과 보고서 · 멘토링 아카이브</title>
+<script src="config.js?v=20261126e"></script>
+<script src="js/weeks.js?v=20261126e"></script>
+<script src="js/mock.js?v=20261126e"></script>
+<script src="js/api.js?v=20261126e"></script>
+<script src="js/sheet-bridge.js?v=20261126e" data-week="6"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+/* =====================================================================
+   6주차 · 개인 활동 결과 보고서
+   - 자동 칸: 2~4주차 활동지 답, 대표 프로젝트의 버전·저장 메모·멘토 피드백, 핵심 코드, 웹앱, 올린 CSV
+   - 학생 칸: 빈칸만 쓰면 돼요. 쓰는 대로 멘토링 아카이브에 저장돼요 (활동지와 같은 방식)
+   - [미리 보기 · PDF]: 보고서 모양으로 보고 PDF로 저장해요 (인쇄 → PDF로 저장)
+   - [제출하기]: 보고서 이미지 + 항목별 답을 멘토링 아카이브에 저장해요. 멘토 현황판과 결과물 zip에 들어가요
+   ===================================================================== */
+:root {
+  --bg: #f7fbff; --paper: #ffffff; --ink: #18233d; --sub: #5b6884; --line: #e4edf8; --line2: #d2deef; --soft: #f1f7ff;
+  --blue: #1d6ff2; --blue-soft: #e7f1ff; --done: #0b8a53;
+  --rp: #2d5597; --rp-soft: #e9eef7; --rp-line: #c9d3e3;
+  --font: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
+  --mono: 'Nanum Gothic Coding', 'D2Coding', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: light; box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: inherit; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+main { max-width: 860px; margin: 0 auto; padding: 28px 18px 120px; }
+.sheet { background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 28px 28px 32px; }
+h1 { margin: 0 0 6px; }
+.goal { color: var(--sub); margin: 0 0 18px; }
+.who { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.who label, .lab { display: block; font-size: .88rem; font-weight: 700; margin: 0 0 6px; }
+input, textarea, select { width: 100%; font: inherit; color: var(--ink); background: #fff; }
+textarea { min-height: 64px; resize: vertical; line-height: 1.55; }
+textarea.mono { font-family: var(--mono); font-size: .9rem; min-height: 150px; white-space: pre; overflow-wrap: normal; overflow-x: auto; tab-size: 4; }
+section { margin-top: 34px; }
+h2 { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+h3 { font-size: 1rem; margin: 22px 0 8px; color: var(--rp); }
+.hint { color: var(--sub); font-size: .92rem; margin: 0 0 12px; }
+
+/* 자동 칸 */
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; vertical-align: 2px; margin-left: 6px; }
+.chip.auto { background: var(--blue-soft); color: var(--blue); }
+.chip.seed { background: #fff4d6; color: #7a5200; }
+.atab { width: 100%; border-collapse: collapse; font-size: .93rem; margin: 6px 0 4px; }
+.atab th, .atab td { border: 1px solid var(--line2); padding: 8px 10px; text-align: left; vertical-align: top; }
+.atab th { background: var(--soft); width: 30%; font-weight: 700; color: var(--ink); }
+.atab thead th { background: var(--rp); color: #fff; width: auto; }
+.atab td.empty { color: #98a2b5; font-style: italic; }
+.atab td pre { margin: 0; white-space: pre-wrap; font: inherit; }
+.tscroll { overflow-x: auto; }
+.f { margin: 14px 0 0; }
+.lab-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 0; }
+.lab-row .lab { margin-bottom: 6px; }
+.atab thead th { white-space: nowrap; }
+.atab td.center, .atab td.nw { white-space: nowrap; }
+.rp-tools { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 4px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--soft); border: 1px solid var(--line); font-size: .9rem; }
+.rp-tools .grow { flex: 1; min-width: 0; color: var(--sub); }
+.rp-tools .bad { color: #c2410c; font-weight: 600; }
+.pick { display: grid; gap: 6px; margin-top: 12px; }
+.warnbox { margin: 8px 0 0; padding: 10px 12px; border-radius: 10px; background: #fff4d6; color: #6b4d00; font-size: .92rem; }
+.warnbox a { color: inherit; font-weight: 700; }
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.shot { border: 1px dashed var(--line2); border-radius: 12px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+.shot b { font-size: .9rem; }
+.shot img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; }
+.shot .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.shot input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.shot label.small { display: inline-flex; align-items: center; justify-content: center; min-height: 34px; padding: 0 12px; border: 1px solid var(--line2); border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; background: #fff; }
+.weblink { font-family: var(--mono); font-size: .85rem; word-break: break-all; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px)); }
+.bar-in { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+.bar .saved { flex: 1; min-width: 0; }
+
+/* 미리 보기 (보고서 모양) */
+.pv { position: fixed; inset: 0; z-index: 50; background: rgba(40, 60, 100, .45); display: none; flex-direction: column; }
+.pv.on { display: flex; }
+.pv-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); background: #fff; border-bottom: 1px solid var(--line); }
+.pv-bar b { flex: 1; min-width: 0; }
+.pv-body { flex: 1; overflow: auto; padding: 20px 12px 40px; }
+.pv-msg { font-size: .9rem; color: var(--sub); }
+
+/* 보고서 종이 (미리 보기 · 이미지 · PDF 모두 이 모양) */
+.paper { width: 820px; max-width: none; margin: 0 auto; background: #fff; color: #1d2433; padding: 44px 48px 40px; font-family: var(--font); font-size: 14px; line-height: 1.55; box-shadow: 0 20px 50px -24px rgba(20, 40, 90, .45); }
+.paper.capture { position: absolute; left: -10000px; top: 0; box-shadow: none; }
+.paper .ey { color: var(--rp); font-weight: 700; font-size: 14px; margin: 0; }
+.paper h1 { font-size: 30px; letter-spacing: -.02em; margin: 2px 0 18px; }
+.paper h2 { font-size: 19px; margin: 30px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--rp); display: block; }
+.paper h2 .no { color: var(--rp); margin-right: 6px; }
+.paper h3 { font-size: 15px; color: var(--rp); margin: 16px 0 6px; }
+.paper table { width: 100%; border-collapse: collapse; margin: 0 0 4px; }
+.paper th, .paper td { border: 1px solid var(--rp-line); padding: 7px 10px; text-align: left; vertical-align: top; }
+.paper tbody th { background: var(--rp-soft); color: var(--rp); width: 23%; font-weight: 700; }
+.paper thead th { background: var(--rp); color: #fff; text-align: center; }
+.paper td.ph { color: #9aa3b2; font-style: italic; }
+.paper td pre, .paper .code { margin: 0; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; line-height: 1.5; }
+.paper .src { color: #7a8395; font-size: 12px; margin: 2px 0 10px; }
+.paper .imgs { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--rp-line); }
+.paper .imgs > div { border-right: 1px solid var(--rp-line); }
+.paper .imgs > div:last-child { border-right: 0; }
+.paper .imgs .box { height: 230px; display: grid; place-items: center; background: #f4f5f7; color: #9aa3b2; font-size: 13px; text-align: center; overflow: hidden; }
+.paper .imgs .box img { max-width: 100%; max-height: 230px; display: block; }
+.paper .imgs .cap { border-top: 1px solid var(--rp-line); text-align: center; font-weight: 700; padding: 6px; font-size: 13px; }
+.paper .foot { text-align: center; color: #9aa3b2; font-size: 11px; margin-top: 26px; }
+.paper .center { text-align: center; }
+
+@media (max-width: 640px) {
+  .sheet { padding: 20px 16px 24px; }
+  .who { grid-template-columns: 1fr 1fr; }
+  .who .date { grid-column: 1 / -1; }
+  .shots { grid-template-columns: 1fr; }
+  .rp-tools { flex-direction: column; align-items: stretch; }
+  .rp-tools button { width: 100%; }
+  .atab th { width: 34%; }
+  .bar .saved { display: none; }
+  .bar-in button { flex: 1; }
+}
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #fff !important; }
+  body > *:not(.pv) { display: none !important; }
+  .pv { position: static; display: block !important; background: none; }
+  .pv-bar { display: none !important; }
+  .pv-body { overflow: visible; padding: 0; }
+  .paper { width: auto; padding: 0; box-shadow: none; font-size: 12.5px; }
+  .paper * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .paper h2 { break-after: avoid; }
+  .paper tr, .paper .imgs, .paper h3 { break-inside: avoid; }
+}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/sheet.css?v=20261126e">
+</head>
+<body>
+<main>
+  <div class="sheet">
+    <h1>개인 활동 <mark>결과 보고서</mark></h1>
+    <p class="goal">2~6주차 동안 한 일을 보고서 한 장으로 정리해요. <b>자동</b> 표시 칸은 활동지·코드·피드백에서 저절로 채워지고, <b>빈칸만</b> 쓰면 돼요. 쓰는 대로 저장되고, 다 쓰면 맨 아래 [제출하기]를 눌러요.</p>
+
+    <div class="who">
+      <div><label for="sid">학번</label><input type="text" id="sid" inputmode="numeric" autocomplete="off"></div>
+      <div><label for="sname">이름</label><input type="text" id="sname" autocomplete="off"></div>
+      <div class="date"><label for="sdate">일자</label><input type="date" id="sdate"></div>
+    </div>
+    <div class="rp-tools"><span class="grow" id="autoMsg" role="status">자동 칸을 준비하는 중…</span>
+      <button type="button" class="small" id="reloadAuto">자동 칸 다시 불러오기</button>
+      <button type="button" class="small" id="previewBtn2" data-toggle="paper">보고서 모양으로 보기</button></div>
+    <span id="progText" hidden></span>
+    <div id="form"></div>
+  </div>
+</main>
+
+<div class="bar"><div class="bar-in">
+  <span class="saved">쓰는 내용은 멘토링 아카이브에 자동으로 저장돼요</span>
+  <button type="button" class="ghost" id="previewBtn">미리 보기 · PDF</button>
+  <button type="button" class="primary" id="saveBtn">제출하기</button>
+</div></div>
+
+<div class="pv" id="pv" role="dialog" aria-modal="true" aria-labelledby="pvTitle">
+  <div class="pv-bar"><b id="pvTitle">보고서 미리 보기</b>
+    <span class="pv-msg" id="pvMsg"></span>
+    <button type="button" class="small" id="imgBtn" hidden>이미지로 받기</button>
+    <button type="button" class="small" id="printBtn">PDF로 저장 (인쇄)</button>
+    <button type="button" class="small" id="pvClose">닫기</button></div>
+  <div class="pv-body"><div class="paper" id="paper"></div></div>
+</div>
+
+<script>
+'use strict';
+const KEY = SheetBridge.key('mentoring-report-v1');
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const FIELDN = window.PYSHARE_FIELDS || {};
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const hhmm = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+const ymd = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const csvRows = (t) => Math.max(0, String(t || '').split(/\r\n|\n|\r/).filter((l) => l.trim()).length - 1);
+
+// 저장되는 모양: f = 학생이 쓴 칸, seed = 자동으로 채워 넣었던 값, auto = 자동 칸 (불러온 때의 모습), img = 화면 사진, pid = 대표 프로젝트
+let D = { f: {}, seed: {}, auto: null, img: {}, pid: null, sdate: '' };
+
+// 학생이 쓰는 칸 (이 목록만 고치면 칸이 바뀌어요)
+const FIELDS = {
+  topic:     { label: '나의 주제 (한 문장)', ph: '예) 우리 반 친구들이 어디에서 공부할 때 가장 오래 공부하는지 알아본다', rows: 2 },
+  core:      { label: '핵심 기능 1~2가지', ph: '예) 장소별 평균 공부 시간 구하기, 막대그래프로 보여 주기', rows: 2 },
+  changed:   { label: '기획에서 가장 크게 바뀐 점과 그 이유', ph: '예) 설문 질문을 5개에서 3개로 줄였어요. AI 피드백에서 질문이 많으면 응답이 줄어든다고 했기 때문이에요.', rows: 3 },
+  keyCode:   { label: '내가 직접 짠 핵심 코드', ph: '# 함수 하나나 핵심 부분을 붙여 넣어요 (주석 포함)', rows: 9, mono: true },
+  keyWhat:   { label: '이 코드가 하는 일 (입력 → 처리 → 출력)', ph: '예) 설문 CSV를 읽어서 → 장소별 평균을 구하고 → 가장 긴 곳을 문장으로 알려 줘요', rows: 2 },
+  grow:      { label: '코드가 어떻게 발전했는지 (처음 → 최종)', ph: '예) v1은 예시 그대로였는데, v3에서 내 설문 CSV로 바꾸고 v5에서 그래프를 넣었어요', rows: 3 },
+  runOut:    { label: '실행 결과 (실행 결과 칸에 나온 글자 그대로)', ph: '실행 결과를 복사해서 붙여 넣어요', rows: 6, mono: true },
+  resultSay: { label: '결과에서 알게 된 것 (결과 문장)', ph: '예) 우리 반은 독서실에서 공부할 때 평균 3.9시간으로 가장 오래 공부했어요', rows: 2 },
+  notApplied:{ label: 'AI 피드백 중 반영하지 않은 것과 그 이유', ph: '예) 웹 크롤링으로 데이터를 모으라고 했지만, 개인정보 문제가 있어서 설문으로만 했어요', rows: 3 },
+  aiCare:    { label: 'AI를 쓸 때 조심한 점', ph: '예) 이름·학번은 넣지 않았고, AI가 알려 준 내용은 다른 자료로 한 번 더 확인했어요', rows: 2 },
+  title:     { label: '프로젝트 제목', ph: '예) 우리 반 공부 장소 분석기', rows: 1 },
+  oneLine:   { label: '한 줄 소개', ph: '이 프로젝트를 한 문장으로 소개해요', rows: 2 },
+  howTo:     { label: '사용 방법 (시작 → 입력 → 결과)', ph: '예) 웹앱을 열고 → 장소를 고르면 → 평균 공부 시간과 그래프가 나와요', rows: 2 },
+  features:  { label: '이 프로젝트만의 특징 2~3가지', ph: '예) 우리 반 진짜 설문으로 만들었어요 / 결과를 문장으로 알려 줘요', rows: 3 },
+  audience:  { label: '발표회에서 받은 질문·의견', ph: '친구들이나 선생님이 해 준 말 (이름은 쓰지 않아요)', rows: 2 },
+  hard:      { label: '가장 어려웠던 점', ph: '만들면서 막혔던 부분', rows: 2 },
+  solved:    { label: '해결한 방법', ph: '어떻게 해결했는지 (오류 안내, 멘토 피드백, AI에게 물어본 방법 등)', rows: 2 },
+  learnedAI: { label: 'AI 활용으로 배운 점', ph: 'AI와 함께 만들면서 알게 된 점', rows: 2 },
+  next:      { label: '다음에 해 보고 싶은 것', ph: '더 넣고 싶은 기능이나 해 보고 싶은 프로젝트', rows: 2 },
+};
+const SHOTS = { shot1: '결과 화면 (그래프·실행 결과)', shot2: '웹앱 화면' };
+
+function save() {
+  D.sdate = $('sdate').value;
+  try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {}
+  progress();
+}
+function load() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+  if (d && typeof d === 'object') D = { f: d.f || {}, seed: d.seed || {}, auto: d.auto || null, img: d.img || {}, pid: d.pid || null, sdate: d.sdate || '' };
+  $('sdate').value = D.sdate || today();
+}
+function progress() {
+  const keys = Object.keys(FIELDS), n = keys.filter((k) => String(D.f[k] || '').trim()).length;
+  $('progText').textContent = `칸 ${keys.length}개 중 ${n}개 채움`;
+}
+
+/* ---------- 자동 칸: 활동지 · 코드 · 파일에서 모아요 (학생만) ---------- */
+// 코드에서 첫 함수(위 주석 포함)를 꺼내요. 함수가 없으면 앞 15줄
+function keyCodeOf(code) {
+  const L = String(code || '').replace(/\t/g, '    ').split('\n');
+  const i = L.findIndex((l) => /^def\s+\w+/.test(l));
+  if (i < 0) return L.filter((l, k) => k < 40).join('\n').trim().split('\n').slice(0, 15).join('\n');
+  let s = i; while (s > 0 && /^#/.test(L[s - 1])) s--;
+  let e = i + 1; while (e < L.length && (L[e].trim() === '' || /^\s/.test(L[e]))) e++;
+  while (e > i + 1 && !L[e - 1].trim()) e--;
+  return L.slice(s, e).join('\n');
+}
+async function refreshAuto() {
+  if (SheetBridge.mode !== 'student') return;
+  const call = SheetBridge.call, me = SheetBridge.me || {};
+  msg('자동 칸을 불러오는 중…');
+  try {
+    const [s2, s3, s4, list, files] = await Promise.all([
+      ...[2, 3, 4].map((w) => call('cs_sheet_get', { p_week: w }).catch(() => null)),
+      call('cs_list'), call('cs_files').catch(() => []),
+    ]);
+    const a2 = (s2 && s2.answers) || {}, a3 = (s3 && s3.answers) || {}, a4 = (s4 && s4.answers) || {};
+    const st3 = a3.state || {}, st4 = a4.state || {}, ev3 = st3.ev || {}, ev4 = st4.ev || {};
+    const t = (v) => String(v ?? '').trim();
+    const picked = (st4.picked && st4.picked.length ? st4.picked : st3.picked && st3.picked.length ? st3.picked : a2.picked || []).slice(0, 2);
+    const mine = (list || []).filter((p) => p.mine);
+    let pid = D.pid;
+    if (!mine.some((p) => p.id === pid)) {
+      const best = mine.find((p) => p.final_no) || mine.slice().sort((x, y) => y.versions - x.versions || new Date(y.updated_at) - new Date(x.updated_at))[0];
+      pid = best ? best.id : null;
+    }
+    let proj = null;
+    const p = mine.find((x) => x.id === pid);
+    if (p && p.unseen) proj = { id: p.id, title: p.title, description: p.description || '', week: p.week, final_no: p.final_no, has_webapp: p.has_webapp, unseen: p.unseen };
+    else if (p) {
+      const d = await call('cs_get', { p_id: p.id });   // 새 피드백이 없을 때만 열어요 (읽음 표시가 바뀌지 않게)
+      const no = d.final_no || d.latest.no;
+      const v = no === d.latest.no ? d.latest : await call('cs_version', { p_id: p.id, p_no: no });
+      proj = { id: d.id, title: d.title, description: d.description || '', week: d.week, final_no: d.final_no, has_webapp: d.has_webapp,
+        codeNo: no, code: v.code,
+        versions: (d.versions || []).slice().reverse().map((x) => ({ no: x.no, at: x.created_at, note: x.note || '', lines: x.lines,
+          fb: (d.feedback || []).filter((f) => f.version_no === x.no).map((f) => f.body) })) };
+    }
+    // 웹앱이 GitHub Pages(apps/p번호.html)에도 올라가 있으면 그 주소를 써요 (로그인 없이 열려요)
+    if (proj && proj.has_webapp && /^https?:$/.test(location.protocol)) {
+      const gh = new URL(`apps/p${proj.id}.html`, location.href).href;
+      try { const r = await fetch(gh, { method: 'HEAD', cache: 'no-store' }); if (r.ok) proj.ghUrl = gh; } catch (e) {}
+    }
+    const design = {};
+    if (picked.includes('data')) design.data = [
+      ['설문 질문', ['q1', 'q2', 'q3', 'q4'].map((k) => t(ev3['d1.' + k])).filter(Boolean).map((q, i) => `${i + 1}. ${q}`).join('\n')],
+      ['모은 응답 수', t(ev4['d1.n']) ? t(ev4['d1.n']) + '명 (4주차 기준)' : ''],
+      ['분석한 CSV', (files || []).map((f) => `${f.name} (${csvRows(f.content)}줄)`).join('\n')],
+    ];
+    if (picked.includes('web')) design.web = [
+      ['입력 → 규칙 → 출력', [t(ev3['w1.in']), t(ev3['w1.rule']), t(ev3['w1.out'])].filter(Boolean).join(' → ')],
+      ['규칙 표', ['r1', 'r2', 'r3', 'r4', 'r5'].map((k) => t(ev3['w2.' + k])).filter(Boolean).join('\n')],
+      ['원하는 화면', t(ev3['w3.screen'])],
+    ];
+    if (picked.includes('sec')) design.sec = [
+      ['문제점과 출처', [[ev3['s1.p1'], ev3['s1.src1']], [ev3['s1.p2'], ev3['s1.src2']]].filter(([a]) => t(a)).map(([a, b]) => `${t(a)}${t(b) ? ` (출처: ${t(b)})` : ''}`).join('\n')],
+      ['해결 방법', [t(ev3['s2.f1']), t(ev3['s2.f2'])].filter(Boolean).join('\n')],
+      ['캠페인 핵심 기능', t(ev3['s3.feat'])],
+    ];
+    const auto = {
+      at: new Date().toISOString(), sid: me.sid || '', name: me.nickname || '', picked,
+      w2: { who: t(a2.who), what: t(a2.what), goal: t(a2.goal), sentence: SheetBridge.carryFrom(a2).topic || '', submitted: !!(s2 && s2.submitted_at) },
+      w3: { topic: t(a3.topic), ai: t(a3.aiFeedback), reflect: t(a3.reflect) },
+      w4: { topic: t(a4.topic), ai: t(a4.aiFeedback), reflect: t(a4.reflect) },
+      io: { in: t(ev4['c3.in']) || t(ev3['w1.in']), proc: t(ev4['c3.proc']) || t(ev3['w1.rule']), out: t(ev4['c3.out']) || t(ev3['w1.out']) },
+      design,
+      projects: mine.map((x) => ({ id: x.id, title: x.title, week: x.week, versions: x.versions, final_no: x.final_no })),
+      weekly: mine.filter((x) => x.week).sort((a, b) => a.week - b.week || a.id - b.id).map((x) => ({ week: x.week, title: x.title, versions: x.versions, final: !!x.final_no })),
+      proj,
+    };
+    const before = JSON.stringify([D.auto && { ...D.auto, at: 0 }, D.pid]);
+    D.auto = auto; D.pid = pid;
+    seedFields();
+    if (JSON.stringify([{ ...auto, at: 0 }, D.pid]) !== before) save();
+    render();
+    msg(`자동 칸은 ${hhmm(auto.at)}에 불러왔어요. 활동지나 코드를 고쳤다면 [자동 칸 다시 불러오기]를 눌러요.`);
+  } catch (e) { msg('자동 칸을 불러오지 못했어요: ' + (e.message || '인터넷 연결을 확인해 주세요'), true); }
+}
+// 자동으로 채워 넣는 학생 칸: 아직 안 고쳤으면(=예전에 채워 넣은 값 그대로면) 새 값으로 바꿔요
+function seedFields() {
+  const A = D.auto || {}, P = A.proj || {};
+  const val = { topic: A.w4 && A.w4.topic || A.w3 && A.w3.topic || A.w2 && A.w2.sentence || '', title: P.title || '', oneLine: P.description || '', keyCode: P.code ? keyCodeOf(P.code) : '' };
+  Object.entries(val).forEach(([k, v]) => {
+    if (!v) return;
+    if (D.f[k] === undefined || D.f[k] === '' || D.f[k] === D.seed[k]) { D.f[k] = v; D.seed[k] = v; }
+  });
+}
+function msg(text, bad) { const m = $('autoMsg'); m.textContent = text; m.classList.toggle('bad', !!bad); }
+
+/* ---------- 화면 (쓰는 곳) ---------- */
+const empty = (v) => !String(v ?? '').trim();
+const cell = (v, ph) => (empty(v) ? `<td class="empty">${esc(ph || '아직 없어요')}</td>` : `<td><pre>${esc(v)}</pre></td>`);
+const hid = (label, value) => `<input type="hidden" aria-label="${esc(label)}" value="${esc(value || '')}">`;
+function field(k) {
+  const F = FIELDS[k], seeded = D.seed[k] !== undefined && D.f[k] === D.seed[k] && !empty(D.f[k]);
+  const tag = k === 'topic' ? 'textarea id="topic"' : `textarea id="f_${k}"`;
+  return `<div class="f"><div class="lab-row"><label class="lab" for="${k === 'topic' ? 'topic' : 'f_' + k}">${esc(F.label)}</label>${seeded ? '<span class="chip seed">자동으로 채움 · 고쳐도 돼요</span>' : ''}</div>
+    <${tag} data-f="${k}" rows="${F.rows}" ${F.mono ? 'class="mono" spellcheck="false"' : ''} placeholder="${esc(F.ph)}">${esc(D.f[k] || '')}</textarea></div>`;
+}
+const autoChip = '<span class="chip auto">자동</span>';
+function render() {
+  const A = D.auto, P = (A && A.proj) || null, view = SheetBridge.mode === 'view';
+  const fieldName = (k) => FIELDN[k] || k;
+  const noAuto = !A ? `<p class="warnbox">${SheetBridge.mode === 'preview' ? '멘토 미리보기예요. 학생으로 들어오면 활동지·코드에서 자동 칸이 채워져요.' : view ? '이 학생은 아직 자동 칸을 불러오지 않았어요.' : '자동 칸을 불러오면 여기에 채워져요.'}</p>` : '';
+  const rows = (pairs) => pairs.map(([l, v, ph]) => `<tr><th>${esc(l)}</th>${cell(v, ph)}</tr>`).join('');
+  const hids = (sec, pairs) => pairs.map(([l, v]) => hid(`${sec} · ${l}`, v)).join('');
+  // 1. 기획
+  const plan = A ? [['분야', (A.picked || []).map(fieldName).join(', '), '활동지에서 고른 분야'], ['누구를 위해', A.w2.who], ['무엇을 만들어', A.w2.what], ['무엇을 알아내거나 해결', A.w2.goal],
+    ['입력', A.io.in], ['처리', A.io.proc], ['출력', A.io.out]] : [];
+  const designHTML = A ? Object.entries(A.design || {}).map(([k, pairs]) => `<h3>${esc(fieldName(k))} 설계 ${autoChip}</h3><div class="tscroll"><table class="atab"><tbody>${rows(pairs)}</tbody></table></div>${hids(fieldName(k), pairs)}`).join('') : '';
+  const grow = A ? [['2주차 처음 기획', A.w2.sentence], ['3주차 (AI 피드백 반영)', [A.w3.topic, A.w3.reflect && '반영: ' + A.w3.reflect].filter(Boolean).join('\n')], ['4주차 (AI 피드백 반영)', [A.w4.topic, A.w4.reflect && '반영: ' + A.w4.reflect].filter(Boolean).join('\n')]] : [];
+  // 2. 코드
+  const projSel = A && A.projects.length ? `<div class="pick"><label class="lab" for="pidSel">대표 프로젝트 (보고서에 넣을 코드)</label>
+      <select id="pidSel">${A.projects.map((x) => `<option value="${x.id}" ${x.id === D.pid ? 'selected' : ''}>${esc(x.title)}${x.week ? ` · ${x.week}주차` : ''} · v${x.versions}${x.final_no ? ' ★ 완성작' : ''}</option>`).join('')}</select></div>` : '';
+  const verRows = P && P.versions ? P.versions.map((v) => `<tr><td class="center">v${v.no}${v.no === P.final_no ? ' ★' : ''}</td><td class="nw">${ymd(v.at)}</td><td>${esc(v.note || '-')}</td><td>${v.fb.length ? v.fb.map((b) => esc(b)).join('<br>') : '-'}</td></tr>`).join('') : '';
+  const verTable = P ? (P.unseen ? `<p class="warnbox">이 프로젝트에 <b>새 피드백 ${P.unseen}개</b>가 있어요. <a href="./#p${P.id}">코드 화면</a>에서 먼저 읽고 와서 [자동 칸 다시 불러오기]를 눌러요.</p>`
+    : `<div class="tscroll"><table class="atab"><thead><tr><th>버전</th><th>저장한 날</th><th>저장 메모</th><th>멘토 피드백</th></tr></thead><tbody>${verRows}</tbody></table></div>
+      ${(P.versions || []).map((v) => hid(`버전 v${v.no}`, `${ymd(v.at)} · 메모: ${v.note || '-'}${v.fb.length ? ' · 피드백: ' + v.fb.join(' / ') : ''}`)).join('')}`)
+    : (A ? '<p class="warnbox">아직 저장한 코드가 없어요. 코드를 만들고 저장한 다음 [자동 칸 다시 불러오기]를 눌러요.</p>' : '');
+  const weekly = A && A.weekly.length ? `<h3>주차별 코드 ${autoChip}</h3><div class="tscroll"><table class="atab"><tbody>${A.weekly.map((w) => `<tr><th>${w.week}주차</th><td>${esc(w.title)} · v${w.versions}${w.final ? ' ★ 완성작' : ''}</td></tr>`).join('')}</tbody></table></div>
+    ${hid('주차별 코드', A.weekly.map((w) => `${w.week}주차 ${w.title} v${w.versions}`).join(' / '))}` : '';
+  // 3. 결과
+  const webUrl = P && P.has_webapp ? (P.ghUrl || new URL('./#a' + P.id, location.href).href) : '';
+  const shotHTML = Object.entries(SHOTS).map(([k, l]) => `<div class="shot"><b>${esc(l)}</b>
+      ${D.img[k] ? `<img src="${D.img[k]}" alt="${esc(l)}">` : '<span class="hint" style="margin:0">아직 없어요. 화면을 캡처해서 올려요.</span>'}
+      <div class="acts"><input type="file" accept="image/*" id="up_${k}" data-shot="${k}"><label class="small" for="up_${k}">${D.img[k] ? '바꾸기' : '사진 올리기'}</label>
+      ${D.img[k] ? `<button type="button" class="small" data-rmshot="${k}">지우기</button>` : ''}</div></div>`).join('');
+  // 4. AI
+  const ai = A ? [['3주차 AI 피드백', A.w3.ai, '3주차 활동지에 붙여 넣은 AI 답'], ['3주차에 반영한 것', A.w3.reflect], ['4주차 AI 피드백', A.w4.ai, '4주차 활동지에 붙여 넣은 AI 답'], ['4주차에 반영한 것', A.w4.reflect]] : [];
+
+  $('form').innerHTML = `${noAuto}
+    <section>
+      <h2><span class="n">1</span>프로젝트 기획</h2>
+      <p class="hint">2~4주차 활동지에서 자동으로 채워져요. 비어 있으면 그 주 활동지를 먼저 채워요.</p>
+      ${A ? `<h3>기획 내용 ${autoChip}</h3><div class="tscroll"><table class="atab"><tbody>${rows(plan)}</tbody></table></div>${hids('기획', plan)}` : ''}
+      ${field('topic')}${field('core')}
+      ${designHTML}
+      ${A ? `<h3>기획 발전 과정 ${autoChip}</h3><div class="tscroll"><table class="atab"><tbody>${rows(grow)}</tbody></table></div>${hids('발전 과정', grow)}` : ''}
+      ${field('changed')}
+    </section>
+    <section>
+      <h2><span class="n">2</span>파이썬 코드 발전 과정</h2>
+      <p class="hint">대표 프로젝트의 버전 기록(저장 메모·멘토 피드백)이 자동으로 들어가요. 핵심 코드는 첫 함수를 꺼내 왔어요. 더 중요한 부분이 있으면 바꿔요.</p>
+      ${projSel}
+      ${P ? `<h3>버전 기록 · ${esc(P.title)} ${autoChip}</h3>` : ''}${verTable}
+      ${weekly}
+      ${field('keyCode')}${field('keyWhat')}${field('grow')}
+    </section>
+    <section>
+      <h2><span class="n">3</span>결과 화면</h2>
+      <p class="hint">코드를 ▶ 실행한 결과와 화면 사진을 넣어요. 사진은 작게 줄여서 저장해요.</p>
+      ${field('runOut')}${field('resultSay')}
+      <div class="shots">${shotHTML}</div>
+      ${A ? `<h3>웹앱 ${autoChip}</h3><div class="tscroll"><table class="atab"><tbody><tr><th>웹앱</th>${webUrl ? `<td><span class="weblink">${esc(webUrl)}</span></td>` : '<td class="empty">멘토가 웹앱을 올리면 주소가 생겨요</td>'}</tr></tbody></table></div>${hid('웹앱 주소', webUrl)}` : ''}
+    </section>
+    <section>
+      <h2><span class="n">4</span>AI 활용 기록</h2>
+      <p class="hint">3·4주차 활동지에 붙여 넣은 AI 피드백과 반영한 것이 자동으로 들어가요.</p>
+      ${A ? `<div class="tscroll"><table class="atab"><tbody>${rows(ai)}</tbody></table></div>${hids('AI', ai)}` : ''}
+      ${field('notApplied')}${field('aiCare')}
+    </section>
+    <section>
+      <h2><span class="n">5</span>완성된 프로젝트 소개</h2>
+      ${field('title')}${field('oneLine')}${field('howTo')}${field('features')}${field('audience')}
+    </section>
+    <section>
+      <h2><span class="n">6</span>완성 소감</h2>
+      ${field('hard')}${field('solved')}${field('learnedAI')}${field('next')}
+    </section>`;
+  bindForm();
+  progress();
+}
+function grow(el) { if (el.classList.contains('mono')) return; el.style.height = 'auto'; el.style.height = Math.min(480, el.scrollHeight + 2) + 'px'; }
+function bindForm() {
+  document.querySelectorAll('[data-f]').forEach((el) => {
+    grow(el);
+    el.addEventListener('input', () => { D.f[el.dataset.f] = el.value; grow(el); save(); });
+  });
+  const sel = $('pidSel');
+  sel && sel.addEventListener('change', () => { D.pid = Number(sel.value); save(); refreshAuto(); });
+  document.querySelectorAll('[data-shot]').forEach((inp) => inp.addEventListener('change', async () => {
+    const f = inp.files && inp.files[0]; inp.value = ''; if (!f) return;
+    try { D.img[inp.dataset.shot] = await shrink(f); save(); render(); }
+    catch (e) { msg('사진을 넣지 못했어요. 다른 사진으로 해 보세요.', true); }
+  }));
+  document.querySelectorAll('[data-rmshot]').forEach((b) => b.addEventListener('click', () => { delete D.img[b.dataset.rmshot]; save(); render(); }));
+}
+// 화면 사진을 작게: 폭 900px 이하 JPEG, 70KB 안으로 (보고서 답은 모두 합쳐 200KB까지 저장돼요)
+async function shrink(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url; });
+    let w = Math.min(900, img.naturalWidth), q = 0.72, out = '';
+    for (let k = 0; k < 8; k++) {
+      const h = Math.round(img.naturalHeight * w / img.naturalWidth);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+      out = c.toDataURL('image/jpeg', q);
+      if (out.length <= 70000) return out;
+      if (q > 0.45) q -= 0.12; else w = Math.round(w * 0.8);
+    }
+    return out;
+  } finally { URL.revokeObjectURL(url); }
+}
+
+/* ---------- 보고서 모양 (미리 보기 · 이미지 · PDF) ---------- */
+function renderPaper() {
+  const A = D.auto || { picked: [], w2: {}, w3: {}, w4: {}, io: {}, design: {}, weekly: [] }, P = A.proj || null, fv = (k) => D.f[k] || '';
+  const fieldName = (k) => FIELDN[k] || k;
+  const td = (v, ph) => (empty(v) ? `<td class="ph">【${esc(ph)}】</td>` : `<td><pre style="font-family:inherit;font-size:inherit;white-space:pre-wrap;margin:0">${esc(v)}</pre></td>`);
+  const kv = (pairs) => `<table><tbody>${pairs.map(([l, v, ph]) => `<tr><th>${esc(l)}</th>${td(v, ph || l)}</tr>`).join('')}</tbody></table>`;
+  const name = `${A.name || $('sname').value || ''}${(A.sid || $('sid').value) ? ' / ' + (A.sid || $('sid').value) : ''}`;
+  const tools = ['파이썬 (멘토링 아카이브)', 'Gemini · ChatGPT', 'Colab'].concat((A.picked || []).includes('data') ? ['구글폼'] : []).join(', ');
+  const webUrl = P && P.has_webapp ? (P.ghUrl || new URL('./#a' + P.id, location.href).href) : '';
+  const img = (k, cap) => `<div><div class="box">${D.img[k] ? `<img src="${D.img[k]}" alt="">` : `[ 이미지 ]<br>${esc(cap)}`}</div><div class="cap">${esc(cap)}</div></div>`;
+  $('paper').innerHTML = `
+    <p class="ey">2026 AI 프로젝트 멘토링 · 온양고</p>
+    <h1>개인 활동 결과 보고서</h1>
+    ${kv([['이름 / 학번', name, '학생 이름 / 학번'], ['프로젝트 제목', fv('title'), '완성된 프로젝트 제목'], ['분야', (A.picked || []).map(fieldName).join(', '), '데이터 분석 / 미니 웹앱 / AI 윤리·보안'],
+      ['활동 기간', '2026. 10. ~ 2026. 11. (2주차 ~ 6주차)'], ['사용 도구', tools]])}
+    <h2><span class="no">1.</span>프로젝트 기획</h2>
+    <h3>가. 기획 내용</h3>
+    ${kv([['주제 (한 문장)', fv('topic'), '누구를 위해 / 무엇을 만들어 / 무엇을 알아내거나 해결'], ['누구를 위해', A.w2.who], ['무엇을 만들어', A.w2.what], ['알아내거나 해결할 것', A.w2.goal],
+      ['입력', A.io.in, '어떤 데이터나 값을 받는지'], ['처리', A.io.proc, '어떤 계산이나 규칙을 쓰는지'], ['출력', A.io.out, '무엇을 보여 주는지'], ['핵심 기능', fv('core')]])}
+    <p class="src">※ 자료 출처: 2주차 주제 정하기 → 3·4주차 설계 (입력 · 처리 · 출력)</p>
+    ${Object.entries(A.design || {}).map(([k, pairs], i) => `<h3>${i ? '' : '나. '}${esc(fieldName(k))} 설계</h3>${kv(pairs)}`).join('') || '<h3>나. 분야별 설계</h3>' + kv([['설계 내용', '', '설문 질문 · 규칙 표 · 캠페인 문제점과 해결 방법']])}
+    <h3>다. 기획 발전 과정</h3>
+    <table><thead><tr><th>2주차 처음 기획</th><th>3~4주차 보완 후 (AI 피드백·멘토 피드백 반영)</th></tr></thead>
+      <tbody><tr>${td(A.w2.sentence, '처음 구상했던 주제')}${td([A.w3.topic, A.w4.topic && A.w4.topic !== A.w3.topic ? A.w4.topic : ''].filter(Boolean).join('\n'), '바뀌거나 새로 추가된 내용')}</tr>
+      <tr><th colspan="2" style="background:var(--rp-soft);color:var(--rp);text-align:left">가장 크게 바뀐 점과 그 이유</th></tr><tr>${td(fv('changed'), '무엇이 왜 바뀌었는지').replace('<td', '<td colspan="2"')}</tr></tbody></table>
+
+    <h2><span class="no">2.</span>파이썬 코드 발전 과정</h2>
+    <h3>가. 버전 기록${P ? ` · ${esc(P.title)}` : ''}</h3>
+    <table><thead><tr><th style="width:9%">버전</th><th style="width:12%">저장한 날</th><th style="width:34%">저장 메모 (바꾼 내용)</th><th>멘토 피드백</th></tr></thead><tbody>
+      ${P && P.versions && P.versions.length ? P.versions.map((v) => `<tr><td class="center">v${v.no}${v.no === P.final_no ? ' ★' : ''}</td><td class="center">${ymd(v.at)}</td><td>${esc(v.note || '-')}</td><td>${v.fb.length ? v.fb.map(esc).join('<br>') : '-'}</td></tr>`).join('')
+        : '<tr><td class="ph center" colspan="4">【저장한 버전이 여기에 들어가요】</td></tr>'}
+    </tbody></table>
+    <p class="src">※ 자료 출처: 멘토링 아카이브의 버전 기록 (저장할 때 쓴 메모와 버전마다 받은 멘토 피드백)</p>
+    ${A.weekly && A.weekly.length ? kv([['주차별 코드', A.weekly.map((w) => `${w.week}주차 · ${w.title} (v${w.versions})${w.final ? ' ★ 완성작' : ''}`).join('\n')]]) : ''}
+    <h3>나. 내가 직접 짠 핵심 코드</h3>
+    <table><tbody><tr><td>${empty(fv('keyCode')) ? '<span style="color:#9aa3b2;font-style:italic">【함수 하나나 핵심 부분 (주석 포함)】</span>' : `<pre class="code">${esc(fv('keyCode'))}</pre>`}</td></tr></tbody></table>
+    ${kv([['이 코드가 하는 일', fv('keyWhat'), '입력 → 처리 → 출력'], ['코드의 발전', fv('grow'), '처음 → 최종으로 어떻게 바뀌었는지']])}
+
+    <h2><span class="no">3.</span>결과 화면</h2>
+    <table><tbody><tr><th>실행 결과</th><td>${empty(fv('runOut')) ? '<span style="color:#9aa3b2;font-style:italic">【실행 결과 칸에 나온 글자】</span>' : `<pre class="code">${esc(fv('runOut'))}</pre>`}</td></tr></tbody></table>
+    ${kv([['알게 된 것', fv('resultSay'), '결과 문장']])}
+    <div class="imgs" style="margin-top:8px">${img('shot1', SHOTS.shot1)}${img('shot2', SHOTS.shot2)}</div>
+    ${kv([['웹앱 주소', webUrl, '멘토가 웹앱을 올리면 생기는 주소']])}
+
+    <h2><span class="no">4.</span>AI 활용 기록</h2>
+    ${kv([['3주차 AI 피드백', A.w3.ai, '3주차에 AI에게 받은 피드백'], ['3주차에 반영한 것', A.w3.reflect], ['4주차 AI 피드백', A.w4.ai, '4주차에 AI에게 받은 피드백'], ['4주차에 반영한 것', A.w4.reflect],
+      ['반영하지 않은 것과 이유', fv('notApplied')], ['AI를 쓸 때 조심한 점', fv('aiCare')]])}
+    <p class="src">※ 자료 출처: 3·4주차 활동지 "AI에게 피드백 받기"</p>
+
+    <h2><span class="no">5.</span>완성된 프로젝트 소개</h2>
+    ${kv([['프로젝트 제목', fv('title')], ['한 줄 소개', fv('oneLine'), '이 프로젝트를 한 문장으로'], ['사용 방법', fv('howTo'), '시작 → 입력 → 결과'], ['특징', fv('features'), '다른 프로젝트와 다른 점 2~3가지'],
+      ['웹앱 주소', webUrl, '멘토링 아카이브 웹앱 주소'], ['발표회 의견', fv('audience'), '받은 질문·의견 (이름은 가림)']])}
+
+    <h2><span class="no">6.</span>완성 소감</h2>
+    ${kv([['가장 어려웠던 점', fv('hard')], ['해결한 방법', fv('solved')], ['AI 활용으로 배운 점', fv('learnedAI')], ['다음에 해 보고 싶은 것', fv('next')]])}
+    <p class="foot">멘토링 아카이브 · ${esc(name)} · ${esc($('sdate').value || today())}</p>`;
+}
+
+/* ---------- 제출용 이미지 ---------- */
+function loadH2C() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  return new Promise((ok, no) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => (window.html2canvas ? ok(window.html2canvas) : no(new Error('html2canvas')));
+    s.onerror = () => no(new Error('html2canvas'));
+    document.head.appendChild(s);
+    setTimeout(() => no(new Error('timeout')), 15000);
+  });
+}
+// 그림 도구를 못 불러오면: 글자만 있는 간단한 보고서 그림
+function textCanvas() {
+  const lines = [];
+  const add = (t) => String(t || '').split('\n').forEach((l) => { while (l.length > 46) { lines.push(l.slice(0, 46)); l = l.slice(46); } lines.push(l); });
+  add('개인 활동 결과 보고서'); add(`${$('sname').value} ${$('sid').value}`); add('');
+  Object.entries(FIELDS).forEach(([k, F]) => { if (!empty(D.f[k])) { add('■ ' + F.label); add(D.f[k]); add(''); } });
+  const c = document.createElement('canvas'); c.width = 900; c.height = Math.min(16000, 60 + lines.length * 24);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.fillStyle = '#1d2433'; x.font = '16px sans-serif';
+  lines.forEach((l, i) => x.fillText(l, 30, 40 + i * 24));
+  return c;
+}
+async function capture() {
+  renderPaper();
+  // 미리 보기 창이 닫혀 있으면 종이를 잠깐 화면 밖(보이지 않는 곳)으로 꺼내서 그려요
+  const paper = $('paper'), home = paper.parentNode;
+  paper.classList.add('capture'); document.body.appendChild(paper);
+  try {
+    const h2c = await loadH2C();
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const c = await h2c(paper, { scale: 1.1, backgroundColor: '#ffffff', logging: false, windowWidth: 900, scrollX: 0, scrollY: 0 });
+    if (!c || !c.width || !c.height) throw new Error('empty');
+    return c;
+  } catch (e) { return textCanvas(); }
+  finally { paper.classList.remove('capture'); home.appendChild(paper); }
+}
+
+/* ---------- 버튼 ---------- */
+let lastImg = '';
+function openPreview(note) {
+  renderPaper(); $('pv').classList.add('on'); $('pvMsg').textContent = note || ''; $('imgBtn').hidden = !lastImg; $('pvClose').focus();
+}
+function closePreview() { $('pv').classList.remove('on'); }
+$('previewBtn').addEventListener('click', () => openPreview());
+$('previewBtn2').addEventListener('click', () => openPreview());
+$('pvClose').addEventListener('click', closePreview);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('pv').classList.contains('on')) closePreview(); });
+$('printBtn').addEventListener('click', () => { $('pvMsg').textContent = '인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일이 돼요.'; window.print(); });
+$('imgBtn').addEventListener('click', () => { if (lastImg) SheetBridge.download(lastImg, `결과보고서_${$('sname').value || '이름없음'}.jpg`.replace(/[\\/:*?"<>|]/g, '')); });
+$('reloadAuto').addEventListener('click', () => refreshAuto());
+$('sdate').addEventListener('change', save);
+$('saveBtn').addEventListener('click', async () => {
+  const btn = $('saveBtn'); btn.disabled = true; btn.textContent = '만드는 중…';
+  try {
+    const canvas = await capture();
+    lastImg = canvas.toDataURL('image/jpeg', 0.85);
+    const sub = await SheetBridge.submit(canvas);
+    openPreview(sub.msg);
+  } catch (e) { msg('보고서 이미지를 만들지 못했어요. 다시 한 번 눌러 주세요.', true); }
+  finally { btn.disabled = false; btn.textContent = '제출하기'; }
+});
+
+SheetBridge.start(KEY, () => {
+  load(); render();
+  if (SheetBridge.mode === 'student') refreshAuto();
+  else { msg(SheetBridge.mode === 'view' ? '학생이 쓴 보고서예요 (읽기 전용). [보고서 모양으로 보기]로 제출본 모양을 볼 수 있어요.' : '멘토 미리보기예요. 학생 화면에서는 자동 칸이 채워져요.'); $('reloadAuto').hidden = true; }
+});
+</script>
+</body>
+</html>

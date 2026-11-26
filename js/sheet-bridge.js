@@ -96,7 +96,7 @@ window.SheetBridge = (() => {
     const push = (el, label, value) => out.push({ section: sectionOf(el), label: clean(label) || '(이름 없음)', value: String(value ?? '').trim() });
     const sel = 'main .fields, main input, main textarea, main select, main [data-confirm], main [data-done], main .task, main #sentence';
     document.querySelectorAll(sel).forEach((el) => {
-      if (el.id === 'promptText') return;
+      if (el.id === 'promptText' || el.type === 'file') return;
       if (el.classList.contains('fields')) {
         push(el, '고른 분야', [...el.querySelectorAll('.field-btn[aria-pressed="true"] strong')].map((x) => x.textContent.trim()).join(', '));
       } else if (el.classList.contains('task')) {
@@ -356,10 +356,22 @@ window.SheetBridge = (() => {
         return;
       }
 
-      mode = 'student';
       document.getElementById('sbWho').textContent = `${me.sid || ''} ${me.nickname}`.trim();
-      let server = null, failed = false;
-      try { server = await rpc('cs_sheet_get', { p_code: tok, p_week: WEEK }); } catch (e) { failed = true; }
+      let server = null, failed = false, closed = false;
+      [server, closed] = await Promise.all([
+        rpc('cs_sheet_get', { p_code: tok, p_week: WEEK }).catch(() => { failed = true; return null; }),
+        rpc('cs_class', { p_code: tok }).then((c) => !!(c && c.closed), () => false),
+      ]);
+      // 마무리 모드: 서버에 있는 답을 읽기 전용으로만 보여요
+      if (closed) {
+        writeLocal(server ? server.answers : null);
+        mode = 'view'; init(); lockAll();
+        note('활동이 마무리돼서 읽기만 할 수 있어요. 제출한 이미지는 [이미지로 받기]로 받을 수 있어요.');
+        status(server ? (server.submitted_at ? '제출 ' + hhmm(server.submitted_at) : '저장 ' + hhmm(server.saved_at) + ' · 제출 안 함') : '쓴 내용이 없어요');
+        if (server && server.has_image) document.getElementById('sbDl').hidden = false;
+        return;
+      }
+      mode = 'student';
       const localDirty = !!lsGet(dirtyKey()) && lsGet(fullKey);
       if (!localDirty && server && server.answers && Object.keys(server.answers).length) writeLocal(server.answers);
       init();
@@ -381,12 +393,19 @@ window.SheetBridge = (() => {
         lsDel(dirtyKey());
         status('제출함 ' + hhmm(r.submitted_at));
         document.getElementById('sbDl').hidden = false;
-        return { ok: true, msg: `제출했어요! 항목 ${r.items ?? its.length}개의 답과 활동지 이미지가 멘토링 아카이브에 저장됐어요. 이미지가 필요하면 [이미지로 받기]를 눌러요.` };
+        const sn = ((window.PYSHARE_WEEKS || []).find((w) => w.no === WEEK) || {}).sheetName || '활동지';
+        return { ok: true, msg: `제출했어요! 항목 ${r.items ?? its.length}개의 답과 ${sn} 이미지가 멘토링 아카이브에 저장됐어요. 이미지가 필요하면 [이미지로 받기]를 눌러요.` };
       } catch (e) {
         status('제출 실패', true);
         return { ok: false, msg: '제출하지 못했어요: ' + (e.message || '다시 눌러 주세요.') };
       }
     },
     download,
+    // 보고서처럼 다른 자료(코드·버전·파일)를 더 불러와야 하는 페이지용
+    call: (fn, args = {}) => rpc(fn, { p_code: tok, ...args }),
+    get me() { return me; },
+    get mode() { return mode; },
+    josa,
+    carryFrom,
   };
 })();

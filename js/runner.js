@@ -48,7 +48,7 @@ const PyRunner = (() => {
       const indexURL = new URL(cfg.pyodide || 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/', location.href).href;
       this.ready = (async () => {
         await ensureSW();
-        const w = new Worker('js/py-worker.js?v=20261126c');
+        const w = new Worker('js/py-worker.js?v=20261126e');
         this.worker = w;
         const base = new URL('.', location.href).href;
         await new Promise((resolve, reject) => {

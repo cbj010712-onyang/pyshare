@@ -8,6 +8,7 @@
      #p12     12번 프로젝트 (편집기 + 실행 결과 + 기록 + 피드백)
      #w3      3주차 화면 (활동지 + 이번 주 코드 / 멘토는 주차별 현황)
      #members 학생 관리 (멘토만)
+     #progress 진행 현황표 · #fbq 피드백 빠르게 쓰기 · #show 발표회 모드 (멘토만, js/extras.js)
    ===================================================================== */
 'use strict';
 
@@ -73,6 +74,7 @@ async function copyText(text, btn) {
 let modalReturn = null;
 function openModal(html, bind) {
   modalReturn = document.activeElement;
+  $('#modalCard').className = 'modal';
   $('#modalCard').innerHTML = html;
   $('#modal').hidden = false;
   $$('[data-close]', $('#modalCard')).forEach((b) => b.addEventListener('click', closeModal));
@@ -114,8 +116,9 @@ function todoHTML(w, doneSet, interactive) {
     ${interactive ? `<label class="tcheck" title="다 했으면 체크"><input type="checkbox" data-ti="${i}" ${doneSet.has(i) ? 'checked' : ''}><span class="tnum">${i + 1}</span></label>` : `<span class="tnum">${i + 1}</span>`}
     <div class="tbody"><b>${esc(t.t)}</b><p>${esc(t.d)}</p>
       ${t.sub ? `<ul>${t.sub.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
-      ${interactive && t.act === 'sheet' && w.sheet ? `<a class="btn tiny" href="${esc(w.sheet)}">활동지 열기 →</a>` : ''}
+      ${interactive && t.act === 'sheet' && w.sheet ? `<a class="btn tiny" href="${esc(w.sheet)}">${esc(sheetName(w))} 열기 →</a>` : ''}
       ${interactive && t.act === 'code' && (w.examples || []).length ? `<button class="btn tiny" data-goex>예시 코드 보기 ↓</button>` : ''}
+      ${interactive && t.act === 'webapp' ? `<button class="btn tiny" data-goreq>웹앱 요청 칸으로 ↓</button>` : ''}
     </div></li>`).join('')}</ol>`;
 }
 function exampleCards(w, mineF, canStart) {
@@ -129,6 +132,8 @@ function exampleCards(w, mineF, canStart) {
     </div>`).join('')}</div>`;
 }
 const weekOf = (n) => WEEKS.find((w) => w.no === Number(n));
+// 그 주에 쓰는 문서 이름 (보통 "활동지", 6주차는 "결과 보고서")
+const sheetName = (w) => (w && w.sheetName) || '활동지';
 const wtag = (n) => (n ? `<span class="wtag">${Number(n)}주차</span>` : '');
 const weekOptions = (sel) => `<option value="">주차 없음 (자유)</option>` +
   WEEKS.map((w) => `<option value="${w.no}" ${Number(sel) === w.no ? 'selected' : ''}>${w.no}주차 · ${esc(w.title)}</option>`).join('');
@@ -179,7 +184,8 @@ const showErr = (e) => { if (e && e.message) toast(e.message, 'bad'); };
 function logout(msg) {
   if (S.P && S.P.dirty && !confirmLeave()) return;
   LS.del(KEY_CODE); SS.del(KEY_CODE);
-  S.code = null; S.me = null; S.list = null; S.sheets = null; S.members = null; S.loginMsg = msg || '';
+  S.code = null; S.me = null; S.list = null; S.sheets = null; S.members = null; S.cls = null; S.loginMsg = msg || '';
+  document.body.classList.remove('is-closed', 'show-mode');
   S.q = ''; S.back = null; S.filter = 'all'; S.wfilter = 'all';
   loginMode = 'student';   // 공용 컴퓨터에서 다음 사람이 바로 학생 칸을 보게
   disposeProject();
@@ -212,7 +218,11 @@ function route() {
   renderTop();
   renderSide();
   if (!S.me) return viewLogin();
+  if (!S.cls) loadClass().then(() => renderSide(), () => {});   // 주차 공지, 마무리 모드
   if (h === 'members' && S.me.role === 'mentor') return viewMembers();
+  if (S.me.role === 'mentor' && h === 'progress') return viewProgress();
+  if (S.me.role === 'mentor' && h === 'fbq') return viewFbQueue();
+  if (S.me.role === 'mentor' && h === 'show') return viewShow();
   if (pm) { if (!S.P) viewProject(Number(pm[1])); return; }
   if (am) return viewWebapp(Number(am[1]));
   const wm = /^w(\d+)$/.exec(h);
@@ -361,7 +371,11 @@ function renderSide() {
   const link = (k, ic, label, extra = '') => `<a class="side-link" href="#${k}"${cur(k)}>${icon(ic)}<span class="sl-t">${label}</span>${extra}</a>`;
   let top;
   if (mentor) {
-    top = link('home', 'chart', '대시보드') + link('codes', 'code', '모든 코드', num(L.length)) + link('members', 'users', '학생 관리');
+    const rq = L.filter((p) => reqState(p) === 'wait').length;
+    const fq = fbNeed(L).length;
+    top = link('home', 'chart', '대시보드', rq ? `<span class="side-num new" title="웹앱 요청">${rq}</span>` : '') + link('codes', 'code', '모든 코드', num(L.length))
+      + link('fbq', 'pen', '피드백 쓰기', fq ? `<span class="side-num new" title="피드백을 기다리는 코드">${fq}</span>` : '')
+      + link('progress', 'grid', '진행 현황표') + link('show', 'stage', '발표회 모드') + link('members', 'users', '학생 관리');
   } else {
     const mine = L.filter((p) => p.mine), unseen = mine.reduce((s, p) => s + (p.unseen || 0), 0);
     top = `<button class="btn primary side-new" id="sideNew">${icon('plus')}<span>새 코드</span></button>`
@@ -410,6 +424,7 @@ async function viewHome(tab = 'home') {
       WEEKS.length ? call(mentor ? 'cs_m_sheets' : 'cs_sheet_mine') : [],
       mentor ? call('cs_m_members') : [],
       loadShareMode(),
+      loadClass(),
     ]);
   } catch (e) { if (e.message && tok === S.seq) $('#app').innerHTML = `<div class="loading bad">${esc(e.message)} <button class="btn small" id="retry">다시</button></div>`, $('#retry').addEventListener('click', route); return; }
   if (tok !== S.seq) return;   // 그 사이 다른 화면으로 갔으면 그만
@@ -423,7 +438,7 @@ async function viewHome(tab = 'home') {
     const q = [p.title, p.nickname, p.sid, p.description].filter(Boolean).join(' ').toLowerCase();
     return `<a class="card" href="#p${p.id}" data-q="${esc(q)}">
       <div class="card-top"><span class="nick">${p.sid ? `<span class="sidtag">${esc(p.sid)}</span>` : ''}${esc(p.nickname)}${p.mine ? ' <small>(나)</small>' : ''}</span>
-        <span class="badges">${finalBadge(p)}${p.has_webapp ? '<span class="badge web">웹앱</span>' : ''}${!p.shared && !p.final_no && S.shareMode === 'all' ? '<span class="badge lock">🔒 나만 보기</span>' : ''}
+        <span class="badges">${finalBadge(p)}${p.has_webapp ? '<span class="badge web">웹앱</span>' : ''}${reqState(p) === 'wait' ? '<span class="badge new">웹앱 요청</span>' : ''}${!p.shared && !p.final_no && S.shareMode === 'all' ? '<span class="badge lock">🔒 나만 보기</span>' : ''}
         ${p.unseen ? `<span class="badge new">새 피드백 ${p.unseen}</span>` : ''}
         ${mentor && p.feedback ? `<span class="badge">피드백 ${p.feedback}</span>` : ''}</span></div>
       <h3>${esc(p.title)}</h3>
@@ -456,20 +471,34 @@ async function viewHome(tab = 'home') {
     const subNow = wNow ? sheets.filter((x) => x.week === wNow.no && x.submitted_at).length : 0;
     const today = L.filter((p) => Date.now() - new Date(p.updated_at) < 86400000).length;
     const finals = L.filter((p) => p.final_no), noFb = L.filter((p) => !p.feedback).length;
+    const reqs = L.filter((p) => reqState(p) === 'wait').sort((a, b) => new Date(a.webapp_req_at) - new Date(b.webapp_req_at));
     const stat = (label, big, sub, href) => `<${href ? `a href="${href}"` : 'div'} class="stat"><span class="st-l">${label}</span><b class="st-n">${big}</b><span class="st-s">${sub}</span></${href ? 'a' : 'div'}>`;
     html = `<section class="home dash">
       <div class="greet"><p class="eyebrow">${esc(todayText())}</p><h1>멘토 대시보드</h1>
         <p class="muted">학생 ${act.length}명이 활동 중이에요. 주차를 누르면 학생별 활동지와 코드를 볼 수 있어요.</p></div>
       <div class="stats">
         ${stat('활동 중인 학생', `${act.length}<small>명</small>`, `<a href="#members">학생 관리 →</a>`)}
-        ${wNow && wNow.sheet ? stat(`${wNow.no}주차 활동지`, `${subNow}<small>/${act.length}</small>`, '제출했어요', `#w${wNow.no}`) : stat('지금 주차', wNow ? `${wNow.no}<small>주차</small>` : '-', wNow ? esc(wNow.title) : '', wNow ? `#w${wNow.no}` : '')}
+        ${wNow && wNow.sheet ? stat(`${wNow.no}주차 ${sheetName(wNow)}`, `${subNow}<small>/${act.length}</small>`, '제출했어요', `#w${wNow.no}`) : stat('지금 주차', wNow ? `${wNow.no}<small>주차</small>` : '-', wNow ? esc(wNow.title) : '', wNow ? `#w${wNow.no}` : '')}
         ${stat('오늘 저장된 코드', `${today}<small>개</small>`, `전체 ${L.length}개`, '#codes')}
-        ${stat('피드백 없는 코드', `${noFb}<small>개</small>`, '피드백을 기다려요', '#codes')}
+        ${stat('피드백 기다리는 코드', `${fbNeed(L).length}<small>개</small>`, '하나씩 쓰러 가기 →', '#fbq')}
+        ${stat('웹앱 요청', `${reqs.length}<small>개</small>`, reqs.length ? '아래 목록에서 만들어요' : '기다리는 요청 없음')}
         ${stat('완성작', `${finals.length}<small>개</small>`, `웹앱 ${finals.filter((p) => p.has_webapp).length}개`)}
+      </div>
+      ${reqs.length ? `<div class="panel req-panel" id="reqs"><h2>🖥 웹앱 요청 <span class="count">${reqs.length}</span></h2>
+        <p class="muted small">먼저 요청한 순서예요. [웹앱 만들기]에서 프롬프트를 복사하면 학생 메모도 함께 들어가요.</p>
+        <div class="req-rows">${reqs.map((p) => `<div class="req-row"><div class="rq-main"><b>${esc(p.title)}</b>
+            <span class="muted small">${p.sid ? esc(p.sid) + ' ' : ''}${esc(p.nickname)} · ${when(p.webapp_req_at)}${p.final_no ? ` · ★ 완성작 v${p.final_no}` : ' · 완성작 아님'}${p.has_webapp ? ' · 예전 웹앱 있음' : ''}</span>
+            ${p.webapp_req_note ? `<span class="req-note">${esc(p.webapp_req_note)}</span>` : ''}</div>
+          <a class="btn primary small" href="#a${p.id}">🖥 웹앱 만들기</a></div>`).join('')}</div></div>` : ''}
+      <div class="tools-row">
+        <a class="tool" href="#progress">${icon('grid')}<span><b>진행 현황표</b><small>학생 × 주차 한눈에 · 참여 확인서</small></span></a>
+        <a class="tool" href="#fbq">${icon('pen')}<span><b>피드백 빠르게 쓰기</b><small>기다리는 코드 ${fbNeed(L).length}개를 하나씩</small></span></a>
+        <a class="tool" href="#show">${icon('stage')}<span><b>발표회 모드</b><small>큰 화면 · 순서 · 3분 타이머</small></span></a>
       </div>
       <div class="sec-head"><h1>주차별 활동</h1></div>
       ${weekCards(L, sheets, members, true)}
       ${sharePanel(L, members)}
+      ${opsPanel()}
       <div class="sec-head row"><div><h1>최근 저장된 코드</h1><p class="muted">학생들이 방금 저장한 코드부터 보여요.</p></div>${L.length ? more('#codes', '모든 코드') : ''}</div>
       ${L.length ? `<div class="grid">${L.slice().sort(byRecent).slice(0, 6).map(card).join('')}</div>`
         : '<div class="empty">아직 코드가 없어요. <a href="#members">학생 관리</a>에서 학생 명단(학번·이름)을 먼저 등록해 주세요.</div>'}
@@ -496,6 +525,8 @@ async function viewHome(tab = 'home') {
     const fresh = others.slice().sort(byRecent).slice(0, 3);
     html = `<section class="home">
       <div class="greet"><p class="eyebrow">${esc(todayText())}</p><h1>${esc(S.me.nickname)}, 반가워요 👋</h1><p class="muted">${line}</p></div>
+      ${closedBar()}
+      ${isClosed() ? '' : noticesFor(w && !allDone ? w.no : null)}
       ${heroHTML(L, sheets)}
       <div class="sec-head row"><div><h1>주차별 활동</h1><p class="muted">한 주에 하나씩, 활동지와 코드를 마치면 ✓ 표시가 붙어요.</p></div></div>
       ${weekCards(L, sheets, members, false)}
@@ -532,6 +563,7 @@ async function viewHome(tab = 'home') {
   }
   $('#app').innerHTML = html;
   $('#whoSel') && $('#whoSel').addEventListener('change', (e) => { S.filter = e.target.value; S.seq++; viewHome(tab); });
+  if (mentor && tab === 'home') bindOps(() => { S.seq++; viewHome(tab); });
   $$('.share-panel [data-mode]').forEach((b) => b.addEventListener('click', async () => {
     if (b.classList.contains('on')) return;
     try { await call('cs_m_share_mode', { p_mode: b.dataset.mode }); S.shareMode = b.dataset.mode; toast(`친구 코드 공개: ${SHARE_MODES[b.dataset.mode]}`, 'good'); S.seq++; viewHome(tab); }
@@ -596,7 +628,7 @@ function heroHTML(L, sheets) {
       ${total ? `<div class="hero-prog">${meter(doneSet.size / total * 100)}<span>할 일 ${doneSet.size}/${total}</span></div>` : ''}
       ${nextI >= 0 && !allDone ? `<p class="hero-next"><span>다음 할 일</span>${esc(w.todo[nextI].t)}</p>` : ''}
       <div class="hero-acts"><a class="btn primary" href="#w${w.no}">할 일 보러 가기 →</a>
-        ${w.sheet ? `<a class="btn" href="${esc(w.sheet)}">${x ? '활동지 이어 쓰기' : '활동지 쓰기'}</a>` : `<button class="btn" id="heroNew" data-week="${w.no}">이번 주 코드 만들기</button>`}</div>
+        ${w.sheet ? `<a class="btn" href="${esc(w.sheet)}">${sheetName(w)} ${x ? '이어 쓰기' : '쓰기'}</a>` : `<button class="btn" id="heroNew" data-week="${w.no}">이번 주 코드 만들기</button>`}</div>
     </div>`;
   }
   const side = fb.length || recent ? `<div class="hero-recent hero-side">
@@ -620,17 +652,18 @@ function weekCards(L, sheets, members, mentor) {
     let sub, cls = '', flag = '';
     if (mentor) {
       const done = sheets.filter((x) => x.week === w.no && x.submitted_at).length;
-      sub = w.sheet ? `${meter(active ? done / active * 100 : 0)}<span class="wk-sub">활동지 제출 ${done}/${active} · 코드 ${code}개</span>`
+      sub = w.sheet ? `${meter(active ? done / active * 100 : 0)}<span class="wk-sub">${sheetName(w)} 제출 ${done}/${active} · 코드 ${code}개</span>`
         : `<span class="wk-sub">활동지 없음 · 코드 ${code}개</span>`;
     } else {
       const x = sheets.find((s) => s.week === w.no);
-      const st = w.sheet ? (x && x.submitted_at ? '활동지 제출' : x ? '활동지 쓰는 중' : '활동지 아직') : '코드만 내는 주';
+      const st = w.sheet ? `${sheetName(w)} ${x && x.submitted_at ? '제출' : x ? '쓰는 중' : '아직'}` : '코드만 내는 주';
       if (weekDone(w, L, sheets)) { cls = 'is-done'; flag = '<span class="wk-flag done">✓ 끝</span>'; }
       else if (cur && cur.no === w.no) { cls = 'is-cur'; flag = '<span class="wk-flag cur">지금</span>'; }
       sub = `<span class="wk-sub">${st} · 내 코드 ${code}개</span>`;
     }
+    const nt = noticeOf(w.no) ? `<span class="wk-due">${icon('mega')}공지 있음</span>` : '';
     return `<a class="wk ${cls}" href="#w${w.no}"><span class="wk-top"><span class="wk-no">${w.no}<small>주차</small></span>${flag}</span>
-      <span class="wk-title">${esc(w.title)}</span>${sub}</a>`;
+      <span class="wk-title">${esc(w.title)}</span>${sub}${nt}</a>`;
   }).join('');
   return `<nav class="weeks" aria-label="주차">${cards}</nav>`;
 }
@@ -674,6 +707,7 @@ async function viewWeek(n) {
       w.sheet ? call(mentor ? 'cs_m_sheets' : 'cs_sheet_mine') : [],
       mentor ? call('cs_m_members') : [],
       mentor ? null : loadShareMode(),
+      loadClass(),
     ]);
   } catch (e) { if (e.message && tok === S.seq) $('#app').innerHTML = `<div class="loading bad">${esc(e.message)}</div>`; return; }
   if (tok !== S.seq) return;
@@ -686,7 +720,8 @@ async function viewWeek(n) {
   const codes = L.filter((p) => p.week === n);
   const nav = `<div class="week-nav"><a class="back" href="#home">← 홈</a><span class="grow"></span>
     <div class="pager">${prev ? `<a class="btn small" href="#w${prev.no}" aria-label="${prev.no}주차로">‹ ${prev.no}주차</a>` : ''}${next ? `<a class="btn small" href="#w${next.no}" aria-label="${next.no}주차로">${next.no}주차 ›</a>` : ''}</div></div>`;
-  const head = `<div class="week-head"><p class="eyebrow">${n}주차</p><h1>${esc(w.title)}</h1>${w.goal ? `<p class="goal-line"><b>이번 주 목표</b>${esc(w.goal)}</p>` : ''}</div>`;
+  const head = `<div class="week-head"><p class="eyebrow">${n}주차</p><h1>${esc(w.title)}</h1>${w.goal ? `<p class="goal-line"><b>이번 주 목표</b>${esc(w.goal)}</p>` : ''}</div>`
+    + (mentor ? '' : closedBar() || noticeBox(n));
   const row = (p) => `<a class="crow" href="#p${p.id}"><b>${esc(p.title)}</b><span class="muted">${mentor || !p.mine ? esc(p.nickname) + ' · ' : ''}v${p.versions} · ${ago(p.updated_at)}</span></a>`;
 
   if (!mentor) {
@@ -703,13 +738,13 @@ async function viewWeek(n) {
       <div class="week-main">
         <div class="week-side">
           <div class="panel">
-            <h2>활동지 ${w.sheet ? `<span class="wk-state ${st.cls}">${esc(st.text)}</span>` : ''}</h2>
+            <h2>${w.sheet ? esc(sheetName(w)) : '활동지'} ${w.sheet ? `<span class="wk-state ${st.cls}">${esc(st.text)}</span>` : ''}</h2>
             ${w.sheet ? `${x && x.summary && x.summary.topic ? `<p class="small">주제: <b>${esc(x.summary.topic)}</b></p>` : ''}
               ${x && x.summary && x.summary.progress ? `<p class="small muted">${esc(x.summary.progress)}</p>` : ''}
-              <div class="panel-actions"><a class="btn primary" href="${esc(w.sheet)}">${x ? '활동지 이어 쓰기' : '활동지 쓰기'}</a>
+              <div class="panel-actions"><a class="btn primary" href="${esc(w.sheet)}">${sheetName(w)} ${x ? '이어 쓰기' : '쓰기'}</a>
               ${x && x.has_image ? `<button class="btn" id="myImg">제출본 보기</button><button class="btn" id="myDl">이미지로 받기</button>` : ''}</div>
-              ${prevSheet ? `<p class="carry-line"><a href="${esc(w.sheet)}?carry=${prevSheet.no}">↻ ${prevSheet.no}주차 활동지 불러와서 쓰기</a><span class="muted small">지난주 답을 옆에 띄워 놓고 보충·수정해요</span></p>` : ''}
-              <p class="muted small">쓰는 대로 저장돼요. 다 쓰면 활동지 맨 아래 [제출하기]를 눌러요.</p>`
+              ${prevSheet && !w.sheetName ? `<p class="carry-line"><a href="${esc(w.sheet)}?carry=${prevSheet.no}">↻ ${prevSheet.no}주차 활동지 불러와서 쓰기</a><span class="muted small">지난주 답을 옆에 띄워 놓고 보충·수정해요</span></p>` : ''}
+              <p class="muted small">${w.sheetName ? '활동지·코드 버전·멘토 피드백·웹앱이 자동으로 채워지고 빈칸만 쓰면 돼요. 쓰는 대로 저장되고, 다 쓰면 맨 아래 [제출하기]를 눌러요. PDF로도 저장할 수 있어요.' : '쓰는 대로 저장돼요. 다 쓰면 활동지 맨 아래 [제출하기]를 눌러요.'}</p>`
             : '<p class="muted small">이번 주는 활동지가 없어요. 할 일과 예시 코드를 따라 코드를 제출해요.</p>'}
           </div>
           <div class="panel">
@@ -719,6 +754,7 @@ async function viewWeek(n) {
               <span class="muted small">${prevP.week}주차 「${esc(prevP.title)}」 v${prevP.versions}${prevP.final_no ? ' ★' : ''}를 복사해서 이번 주 코드로 이어서 고쳐요. 지난 코드는 그대로 남아요.</span></div>` : ''}
             <div class="panel-actions">${(w.examples || []).length ? '<button class="btn" data-goex>예시 코드 고르기 ↓</button>' : ''}<button class="btn ghost" id="weekNew">+ 빈 코드</button></div>
           </div>
+          ${w.webapp ? webappPanel(L.filter((p) => p.mine)) : ''}
           ${isLast ? `<div class="panel res-panel"><h2>마지막 정리: 내 결과물 받기</h2>
             <p class="muted small">완성작 코드(.py)와 웹앱(.html), 주차별 코드, 제출한 활동지를 zip 하나로 받아요. 발표 자료나 포트폴리오로 보관해요.</p>
             <div class="panel-actions"><button class="btn primary" id="weekRes">⬇ 내 결과물 내려받기</button></div></div>` : ''}
@@ -757,10 +793,12 @@ async function viewWeek(n) {
     $('#weekNew').addEventListener('click', () => newProjectModal(n, ''));
     $('#weekCarry') && $('#weekCarry').addEventListener('click', () => newProjectModal(n, 'p:' + prevP.id));
     $('#weekRes') && $('#weekRes').addEventListener('click', () => resultsModal({ sheets }));
-    $('#myImg') && $('#myImg').addEventListener('click', () => imageModal(n, null, `${S.me.nickname} · ${n}주차 활동지`));
+    $('#reqBtn') && $('#reqBtn').addEventListener('click', () => { const mine = L.filter((p) => p.mine); webappRequestModal(reqTarget(mine), mine, () => { S.seq++; viewWeek(n); }); });
+    $$('[data-goreq]').forEach((b) => b.addEventListener('click', () => { const el = $('#waReqPanel'); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }));
+    $('#myImg') && $('#myImg').addEventListener('click', () => imageModal(n, null, `${S.me.nickname} · ${n}주차 ${sheetName(w)}`));
     $('#myDl') && $('#myDl').addEventListener('click', async (e) => {
       const b = e.currentTarget; b.disabled = true;
-      try { const r = await call('cs_sheet_image', { p_week: n }); if (r) saveDataUrl(r.image, fileName(`${S.me.nickname} ${n}주차 활동지`)); else toast('제출한 이미지가 없어요'); }
+      try { const r = await call('cs_sheet_image', { p_week: n }); if (r) saveDataUrl(r.image, fileName(`${S.me.nickname} ${n}주차 ${sheetName(w)}`)); else toast('제출한 이미지가 없어요'); }
       catch (err) { showErr(err); }
       b.disabled = false;
     });
@@ -772,6 +810,7 @@ async function viewWeek(n) {
   const xs = (sheets || []).filter((s) => s.week === n);
   const done = xs.filter((x) => x.submitted_at).length, draft = xs.filter((x) => !x.submitted_at).length;
   $('#app').innerHTML = `<section class="week">${nav}${head}
+    ${noticeEditor(n)}
     <details class="panel mentor-todo"><summary><b>학생이 이번 주에 할 일</b> <span class="muted small">${(w.todo || []).length}개 · 예시 코드 ${(w.examples || []).length}개</span></summary>
       ${todoHTML(w, new Set(), false)}${(w.examples || []).length ? `<h3 class="ex-h">예시 코드</h3>${exampleCards(w, [], false)}` : ''}</details>
     <div class="week-stats panel">
@@ -782,10 +821,10 @@ async function viewWeek(n) {
           <button class="chip" data-st="draft">작성 중 ${draft}</button><button class="chip" data-st="none">아직 ${Math.max(0, ms.length - done - draft)}</button></div>`
         : `<div class="ws-num"><b>${codes.length}</b><span>개 코드 · 이번 주는 활동지가 없어요</span></div>`}
       </div>
-      ${w.sheet ? `<div class="ws-acts"><a class="btn small" href="${esc(w.sheet)}">활동지 미리보기</a><button class="btn small" id="csvBtn">항목별 답 CSV</button></div>` : ''}
+      ${w.sheet ? `<div class="ws-acts"><a class="btn small" href="${esc(w.sheet)}">${esc(sheetName(w))} 미리보기</a><button class="btn small" id="csvBtn">항목별 답 CSV</button></div>` : ''}
     </div>
     ${ms.length ? `<div class="wtable" role="table" aria-label="${n}주차 학생별 현황">
-      <div class="wrow head" role="row"><span>학번</span><span>이름</span><span>활동지</span><span>진행 · 주제</span><span>이번 주 코드</span><span>보기</span></div>
+      <div class="wrow head" role="row"><span>학번</span><span>이름</span><span>${esc(w.sheet ? sheetName(w) : '활동지')}</span><span>진행 · 주제</span><span>이번 주 코드</span><span>보기</span></div>
       ${ms.map((m) => {
         const x = xs.find((s) => s.member_id === m.id), st = sheetState(x);
         const pc = codes.filter((p) => p.nickname === m.nickname && p.sid === m.sid);
@@ -804,8 +843,9 @@ async function viewWeek(n) {
     $$('.ws-filter .chip').forEach((c) => c.classList.toggle('on', c === b));
     $$('.wrow[data-st]').forEach((r) => { r.hidden = b.dataset.st !== 'all' && r.dataset.st !== b.dataset.st; });
   }));
-  $$('[data-img]').forEach((b) => b.addEventListener('click', () => imageModal(n, Number(b.dataset.img), `${b.dataset.name} · ${n}주차 활동지`)));
+  $$('[data-img]').forEach((b) => b.addEventListener('click', () => imageModal(n, Number(b.dataset.img), `${b.dataset.name} · ${n}주차 ${sheetName(w)}`)));
   $('#csvBtn') && $('#csvBtn').addEventListener('click', () => weekCsv(n, ms, xs));
+  bindNoticeEditor(n, () => { S.seq++; viewWeek(n); });
 }
 
 // 파일 이름·내려받기
@@ -828,7 +868,7 @@ const stamp = () => { const d = new Date(); return `${d.getFullYear()}${pad(d.ge
    ===================================================================== */
 // 활동지 항목별 답을 읽기 쉬운 글로
 function itemsText(week, items, submittedAt) {
-  const out = [`[${week}주차 활동지] ${submittedAt ? '제출 ' + when(submittedAt) : ''}`.trim(), ''];
+  const out = [`[${week}주차 ${sheetName(weekOf(week))}] ${submittedAt ? '제출 ' + when(submittedAt) : ''}`.trim(), ''];
   let last = null;
   items.forEach((i) => {
     if (i.section !== last) { if (last !== null) out.push(''); out.push('■ ' + i.section); last = i.section; }
@@ -874,8 +914,9 @@ async function resultFiles(who, projects, sheets, opt, tick) {
         x.has_image ? call('cs_sheet_image', { p_week: x.week, p_mid: who.mid || null }) : null,
         call('cs_sheet_items', { p_week: x.week, p_mid: who.mid || null }),
       ]); tick();
-      if (img && img.image) files.push({ name: `${root}활동지/${x.week}주차_활동지${MiniZip.extOf(img.image)}`, data: MiniZip.fromDataUrl(img.image) });
-      if (items && items.length) files.push({ name: `${root}활동지/${x.week}주차_활동지_답.txt`, data: itemsText(x.week, items, x.submitted_at) });
+      const sn = fileName(sheetName(weekOf(x.week))), dir = sn === '활동지' ? '활동지' : sn;
+      if (img && img.image) files.push({ name: `${root}${dir}/${x.week}주차_${sn}${MiniZip.extOf(img.image)}`, data: MiniZip.fromDataUrl(img.image) });
+      if (items && items.length) files.push({ name: `${root}${dir}/${x.week}주차_${sn}_답.txt`, data: itemsText(x.week, items, x.submitted_at) });
       notes.push(`  ${x.week}주차: ${img && img.image ? '이미지' : ''}${img && img.image && items && items.length ? ' + ' : ''}${items && items.length ? `항목별 답 ${items.length}개` : ''}`);
     }
   }
@@ -906,7 +947,7 @@ function resultsModal(ctx) {
       <fieldset class="rs-opts"><legend>담을 것</legend>
         <label><input type="checkbox" checked disabled> ★ 완성작 코드(.py)와 웹앱(.html)</label>
         <label><input type="checkbox" id="rsCode" checked> 주차별 코드 (마지막 저장 버전)${mentor ? '' : ` · ${mineN}개`}</label>
-        <label><input type="checkbox" id="rsSheets" checked> 제출한 활동지 이미지와 항목별 답</label>
+        <label><input type="checkbox" id="rsSheets" checked> 제출한 활동지·결과 보고서 (이미지와 항목별 답)</label>
         <label><input type="checkbox" id="rsData" checked> 올린 데이터 파일 (CSV)</label>
       </fieldset>
       <div class="rs-prog" id="rsProg" hidden>${meter(0)}<span id="rsMsg">준비 중…</span></div>
@@ -972,7 +1013,7 @@ async function weekCsv(n, ms, xs) {
     lines.push([m.sid, m.nickname, x && x.submitted_at ? when(x.submitted_at) : '', ...cols.map((c) => val[c] ?? '')].map(q).join(','));
   });
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob); saveDataUrl(url, `${n}주차_활동지_항목별_답.csv`);
+  const url = URL.createObjectURL(blob); saveDataUrl(url, `${n}주차_${fileName(sheetName(weekOf(n)))}_항목별_답.csv`);
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
@@ -1131,12 +1172,15 @@ function renderProject() {
       <button class="btn run" id="runBtn" disabled>▶ 실행 <kbd>Ctrl+Enter</kbd></button>
       <button class="btn stop" id="stopBtn" disabled>■ 멈춤</button>
       <span class="sep"></span>
+      ${d.mine && isClosed() ? `<span class="note">${icon('lock')} 활동이 마무리돼서 읽기만 할 수 있어요</span>` : ''}
       ${d.mine ? `<button class="btn primary" id="saveBtn">저장 <kbd>Ctrl+S</kbd></button><span class="dirty" id="dirty" hidden>● 저장 안 됨</span>
            <button class="btn final-btn ${d.final_no ? 'is-final' : ''}" id="finalBtn">${finalLabel(d)}</button>`
         : `<span class="note">${mentor ? '멘토 보기 · 고쳐서 실행해 볼 수 있지만 저장되지 않아요' : '친구 코드 · 고쳐서 실행해 볼 수 있지만 저장되지 않아요'}</span>
            <button class="btn small" id="resetBtn" hidden>원래대로</button>`}
       <span class="grow"></span>
-      ${mentor ? `<a class="btn" href="#a${d.id}">${d.has_webapp ? '🖥 웹앱' : '🖥 웹앱 만들기'}</a>` : d.has_webapp ? `<a class="btn" href="#a${d.id}">🖥 웹앱 보기</a>` : ''}
+      ${mentor ? `<a class="btn" href="#a${d.id}">${d.has_webapp ? '🖥 웹앱' : '🖥 웹앱 만들기'}${reqState(d) === 'wait' ? ' <span class="num">요청</span>' : ''}</a>`
+        : d.has_webapp && reqState(d) !== 'wait' ? `<a class="btn" href="#a${d.id}">🖥 웹앱 보기</a>`
+        : d.mine ? `<button class="btn" id="reqBtnP">${reqState(d) === 'wait' ? '🖥 웹앱 요청함' : '🖥 웹앱 요청'}</button>` : ''}
       <button class="btn" id="dataBtn" title="CSV 데이터 파일 보기·올리기" aria-label="데이터 파일">${icon('data')}<span class="lbl"> 데이터</span></button>
       <button class="btn" id="histBtn">기록 <span class="vtag">v${d.latest.no}</span></button>
       <button class="btn" id="dlBtn" title="지금 편집기의 코드를 .py 파일로 받아요" aria-label=".py 파일로 받기">⬇<span class="lbl"> .py</span></button>
@@ -1166,6 +1210,7 @@ function renderProject() {
   $('#conClear').addEventListener('click', clearConsole);
   $('#histBtn').addEventListener('click', openHistory);
   $('#dataBtn').addEventListener('click', openData);
+  $('#reqBtnP') && $('#reqBtnP').addEventListener('click', () => webappRequestModal(P.data, [P.data], () => reloadProject()));
   $('#dlBtn').addEventListener('click', () => {
     const code = P.cm ? P.cm.getValue() : P.data.latest.code;
     const no = P.viewing ? P.viewing.no : P.data.latest.no, changed = !P.viewing && code !== P.data.latest.code;
@@ -1181,7 +1226,7 @@ function renderProject() {
   P.onKey = (e) => {
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key === 'Enter') { e.preventDefault(); if (!P.runner || !P.runner.running) runCode(); }
-    if (mod && (e.key === 's' || e.key === 'S') && P.data.mine) { e.preventDefault(); if ($('#modal').hidden) saveModal(); }
+    if (mod && (e.key === 's' || e.key === 'S') && P.data.mine) { e.preventDefault(); if ($('#modal').hidden && !document.body.classList.contains('is-closed')) saveModal(); }
   };
   window.addEventListener('keydown', P.onKey);
 }
@@ -1191,6 +1236,86 @@ function renderProject() {
    - sandbox 에 allow-same-origin 이 없어서, 웹앱은 멘토링 아카이브의 로그인 정보(localStorage)를 읽을 수 없어요
    ===================================================================== */
 const WA_SANDBOX = 'allow-scripts allow-forms allow-modals';
+/* ---------- 웹앱 요청 (학생 → 멘토) ---------- */
+// none: 요청 안 함 / wait: 요청함, 멘토가 만드는 중 / done: 요청 뒤에 멘토가 웹앱을 올림
+const reqState = (p) => (!p || !p.webapp_req_at ? 'none'
+  : p.has_webapp && p.webapp_at && new Date(p.webapp_at) >= new Date(p.webapp_req_at) ? 'done' : 'wait');
+// 요청할 프로젝트 고르기: 요청 중인 것 → 완성작 → 최근에 고친 것
+function reqTarget(mine) {
+  const by = (a, b) => new Date(b.updated_at) - new Date(a.updated_at);
+  return mine.find((p) => reqState(p) === 'wait') || mine.find((p) => p.final_no) || mine.slice().sort(by)[0] || null;
+}
+function webappRequestModal(p, mine, after) {
+  const st = reqState(p);
+  openModal(`<h2>🖥 웹앱 요청하기</h2>
+    <p class="muted">멘토가 이 프로젝트의 코드로 친구들이 바로 써 볼 수 있는 웹앱을 만들어 줘요.
+      ${p.final_no ? `<b>★ 완성작 v${p.final_no}</b>로 만들어요.` : '아직 완성작이 없어서 <b>마지막으로 저장한 버전</b>으로 만들어요. 먼저 [★ 완성작으로 내기]를 하면 더 좋아요.'}</p>
+    <form id="rqForm" novalidate>
+      ${mine.length > 1 ? `<label for="rqPid">어떤 프로젝트를 웹앱으로 만들까요?</label>
+        <select id="rqPid">${mine.map((x) => `<option value="${x.id}" ${x.id === p.id ? 'selected' : ''}>${esc(x.title)}${x.week ? ` · ${x.week}주차` : ''}${x.final_no ? ' ★ 완성작' : ''}</option>`).join('')}</select>` : ''}
+      <label for="rqNote">원하는 화면이나 기능 (선택)</label>
+      <textarea id="rqNote" rows="4" maxlength="500" placeholder="예) 장소를 고르면 평균 공부 시간과 막대그래프가 나오게 해 주세요. 색은 파란색이 좋아요.">${esc(p.webapp_req_note || '')}</textarea>
+      <p class="muted small">코드에 없는 새 기능은 넣지 않아요. 내가 짠 규칙과 계산이 그대로 웹앱에 들어가요.</p>
+      <p class="form-err" id="rqErr" role="alert"></p>
+      <div class="modal-actions">${st === 'wait' ? '<button type="button" class="btn ghost danger" id="rqCancel">요청 거두기</button><span class="grow"></span>' : ''}
+        <button type="button" class="btn" data-close>닫기</button><button class="btn primary" id="rqOk">${st === 'wait' ? '메모 고치기' : st === 'done' ? '다시 요청하기' : '요청하기'}</button></div>
+    </form>`, (m) => {
+    const pid = () => ($('#rqPid', m) ? Number($('#rqPid', m).value) : p.id);
+    $('#rqForm', m).addEventListener('submit', async (e) => {
+      e.preventDefault(); const b = $('#rqOk', m); b.disabled = true;
+      try { await call('cs_webapp_request', { p_id: pid(), p_note: $('#rqNote', m).value, p_cancel: false }); closeModal(); toast('웹앱을 요청했어요. 멘토가 만들면 여기에 보여요', 'good'); S.list = null; after && after(); }
+      catch (err) { $('#rqErr', m).textContent = err.message || '요청하지 못했어요.'; b.disabled = false; }
+    });
+    $('#rqCancel', m) && $('#rqCancel', m).addEventListener('click', async () => {
+      try { await call('cs_webapp_request', { p_id: p.id, p_note: null, p_cancel: true }); closeModal(); toast('요청을 거뒀어요'); S.list = null; after && after(); }
+      catch (err) { $('#rqErr', m).textContent = err.message; }
+    });
+  });
+}
+// 5·6주차 화면의 웹앱 요청 칸
+function webappPanel(mine) {
+  const p = reqTarget(mine);
+  if (!p) return `<div class="panel wa-req"><h2>🖥 웹앱 요청</h2><p class="muted small">코드를 만들고 저장하면 웹앱을 요청할 수 있어요.</p></div>`;
+  const st = reqState(p);
+  const head = { none: '', wait: '<span class="wk-state draft">요청함</span>', done: '<span class="wk-state done">웹앱 나옴</span>' }[st];
+  const body = st === 'wait'
+    ? `<p class="small"><b>${esc(p.title)}</b> · ${when(p.webapp_req_at)}에 요청했어요. 멘토가 만들고 있어요.</p>${p.webapp_req_note ? `<p class="req-note">${esc(p.webapp_req_note)}</p>` : ''}
+       <div class="panel-actions"><button class="btn" id="reqBtn">메모 고치기 · 거두기</button></div>`
+    : st === 'done'
+    ? `<p class="small"><b>${esc(p.title)}</b>의 웹앱이 나왔어요! 친구들과 써 보고, 고칠 점이 있으면 다시 요청해요.</p>
+       <div class="panel-actions"><a class="btn primary" href="#a${p.id}">웹앱 열기 →</a><button class="btn" id="reqBtn">다시 요청하기</button></div>`
+    : `<p class="small">완성작을 내고 웹앱을 요청하면, 멘토가 내 코드로 친구들이 써 볼 수 있는 웹앱을 만들어 줘요.</p>
+       <p class="small muted">${p.final_no ? `요청할 코드: <b>${esc(p.title)}</b> ★ 완성작 v${p.final_no}` : `요청할 코드: <b>${esc(p.title)}</b> (아직 완성작이 아니에요)`}</p>
+       <div class="panel-actions"><button class="btn primary" id="reqBtn">🖥 웹앱 요청하기</button></div>`;
+  return `<div class="panel wa-req" id="waReqPanel"><h2>🖥 웹앱 요청 ${head}</h2>${body}</div>`;
+}
+// GitHub Pages 에 따로 올릴 웹앱 파일: 웹앱을 sandbox iframe 으로 감싸요
+// (같은 github.io 주소라도 웹앱 코드가 멘토링 아카이브 로그인 정보를 읽지 못하게)
+const ghPath = (id) => `apps/p${id}.html`;
+const ghUrl = (id) => new URL(ghPath(id), location.href).href.replace(/#.*$/, '');
+function ghWrap(a) {
+  const src = String(a.html || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(a.title)} · 웹앱</title>
+<meta name="description" content="${esc(a.nickname)} 학생이 파이썬으로 만든 프로젝트를 웹앱으로 바꿨어요 (멘토링 아카이브)">
+<style>html,body{margin:0;height:100%;background:#fff}iframe{display:block;border:0;width:100%;height:100%}</style>
+</head>
+<body>
+<!-- 멘토링 아카이브에서 만든 파일이에요. 웹앱은 격리된 칸(sandbox) 안에서만 돌아가요. -->
+<iframe sandbox="${WA_SANDBOX}" referrerpolicy="no-referrer" title="${esc(a.title)}" srcdoc="${src}"></iframe>
+</body>
+</html>
+`;
+}
+async function ghExists(id) {
+  if (!/^https?:$/.test(location.protocol)) return false;
+  try { const r = await fetch(ghUrl(id), { method: 'HEAD', cache: 'no-store' }); return r.ok; } catch (e) { return false; }
+}
+
 let waKey = null, waFiles = [];
 function waPrompt(d, code, no) {
   return `아래 파이썬 코드는 고등학교 1학년 학생이 멘토링 프로젝트에서 직접 만든 코드예요.
@@ -1201,7 +1326,7 @@ function waPrompt(d, code, no) {
 ${d.description ? `- 설명: ${d.description}\n` : ''}- 만든 사람: ${d.nickname}
 ${d.week ? `- ${d.week}주차 코드 · ` : '- '}v${no}
 
-[꼭 지킬 것]
+${d.req_note ? `[학생이 원하는 화면·기능]\n${d.req_note}\n(코드에 있는 규칙·계산 안에서만 반영해 주세요)\n\n` : ''}[꼭 지킬 것]
 1. HTML 파일 하나로 만들어 주세요. CSS와 JavaScript는 모두 파일 안에 넣고, 바깥 파일·라이브러리·글꼴·이미지 주소는 불러오지 마세요.
 2. 파이썬 코드의 규칙·계산·문장은 그대로 옮겨 주세요. 새 기능은 넣지 말고, 학생이 직접 짠 로직이 화면에 그대로 드러나게 해 주세요.
 3. input()은 입력칸·버튼·선택지로, print()는 화면의 결과 영역으로 바꿔 주세요. 잘못된 입력에는 친절한 한국어 안내를 보여 주세요.
@@ -1255,6 +1380,10 @@ async function viewWebapp(id) {
       ${a.description ? `<p class="muted">${esc(a.description)}</p>` : ''}
       <p class="wa-meta">${a.final_no ? `<span class="badge final">★ 완성작</span>` : ''}${a.html ? `<span class="badge web">웹앱${a.webapp_no ? ` · v${a.webapp_no} 코드로 만듦` : ''}</span> <span class="muted small">${ago(a.webapp_at)}</span>` : ''}</p>
     </div>
+    ${a.req_at ? `<div class="panel req-box ${reqState({ webapp_req_at: a.req_at, has_webapp: !!a.html, webapp_at: a.webapp_at })}"><b>${reqState({ webapp_req_at: a.req_at, has_webapp: !!a.html, webapp_at: a.webapp_at }) === 'wait' ? '🖥 웹앱 요청이 와 있어요' : '🖥 학생 요청 (웹앱을 올린 뒤)'}</b>
+      <span class="muted small">${when(a.req_at)}에 ${a.mine ? '요청했어요. 멘토가 만들고 있어요.' : '요청했어요.'}</span>
+      ${a.req_note ? `<p class="req-note">${esc(a.req_note)}</p>` : '<p class="muted small">따로 적은 메모는 없어요.</p>'}${mentor && a.req_note ? '<p class="muted small">이 메모는 변환 프롬프트에 함께 들어가요.</p>' : ''}</div>` : ''}
+    <p class="gh-line" id="ghLine" hidden><a class="btn small" id="ghOpen" target="_blank" rel="noopener">GitHub 페이지로 열기 ↗</a><span class="muted small">로그인 없이 누구나 열 수 있는 주소예요</span></p>
     ${mentor ? `<details class="panel wa-tools" ${a.html ? '' : 'open'}><summary><b>웹앱 만들기·바꾸기</b> <span class="muted small">멘토만 보여요</span></summary>
       ${stale ? `<p class="warnline">이 웹앱은 v${a.webapp_no} 코드로 만들었는데, 지금 완성작은 v${a.final_no}예요. 새로 만들면 좋아요.</p>` : ''}
       <ol class="wa-steps">
@@ -1268,6 +1397,17 @@ async function viewWebapp(id) {
           ${a.html ? '<span class="grow"></span><button class="btn ghost danger" id="waDel">웹앱 지우기</button>' : ''}</div></li>
       </ol>
       <p class="form-err" id="waErr" role="alert"></p>
+    </details>` : ''}
+    ${mentor && a.html ? `<details class="panel wa-tools gh-tools"><summary><b>GitHub Pages에 올리기</b> <span class="muted small">로그인 없이 열리는 주소 만들기</span></summary>
+      <ol class="wa-steps">
+        <li><b>파일 받기</b> · 웹앱을 안전한 칸(sandbox)으로 감싼 파일이에요. 파일 이름은 꼭 <code>p${a.id}.html</code> 그대로 둬요.
+          <div class="wa-row"><button class="btn" id="ghDl">⬇ ${esc(ghPath(a.id).split('/')[1])} 받기</button><button class="btn" id="ghCopy">내용 복사</button></div></li>
+        <li><b>GitHub 저장소</b>(이 사이트를 올린 곳)에서 <b>Add file → Create new file</b> → 이름 칸에 <code>${esc(ghPath(a.id))}</code>를 적고 → 복사한 내용을 붙여 넣고 → <b>Commit changes</b>.
+          <span class="muted small">(또는 <code>apps</code> 폴더에 들어가서 Add file → Upload files로 받은 파일을 올려요)</span></li>
+        <li><b>1~2분 뒤</b> 아래 주소가 열려요. 열리면 이 화면 위쪽에 [GitHub 페이지로 열기]가 학생에게도 보여요.
+          <div class="wa-row"><code class="gh-url">${esc(ghUrl(a.id))}</code><button class="btn small" id="ghCheck">열리는지 확인</button><span class="muted small" id="ghMsg"></span></div></li>
+      </ol>
+      <p class="muted small">웹앱을 다시 저장했다면 파일도 다시 받아서 같은 이름으로 덮어 올려요. GitHub에는 웹앱만 올라가고, 학생 코드·이름·학번은 올라가지 않아요.</p>
     </details>` : ''}
     <div class="wa-stage" id="waStage">
       <div class="wa-bar"><span class="wa-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="wa-name" id="waName">${esc(a.title)}</span>
@@ -1289,7 +1429,19 @@ async function viewWebapp(id) {
   if (waKey) document.removeEventListener('keydown', waKey);
   waKey = (e) => { if (e.key === 'Escape' && stage.isConnected && stage.classList.contains('full')) full(false); };
   document.addEventListener('keydown', waKey);
+  // GitHub 페이지에 올라가 있으면 링크를 보여 줘요
+  ghExists(a.id).then((ok) => { if (ok && $('#ghLine') && tok === S.seq) { $('#ghOpen').href = ghUrl(a.id); $('#ghLine').hidden = false; } });
   if (!mentor) return;
+  if (a.html) {
+    $('#ghDl').addEventListener('click', () => saveBlob(new Blob([ghWrap(a)], { type: 'text/html;charset=utf-8' }), ghPath(a.id).split('/')[1]));
+    $('#ghCopy').addEventListener('click', (e) => copyText(ghWrap(a), e.currentTarget));
+    $('#ghCheck').addEventListener('click', async () => {
+      $('#ghMsg').textContent = '확인 중…';
+      const ok = await ghExists(a.id);
+      $('#ghMsg').textContent = ok ? '열려요 ✓' : '아직 안 열려요. 올린 지 1~2분 지났는지, 파일 이름과 폴더(apps)를 확인해 주세요.';
+      if (ok) { $('#ghOpen').href = ghUrl(a.id); $('#ghLine').hidden = false; }
+    });
+  }
   const errEl = $('#waErr');
   $('#waCopy').addEventListener('click', async (e) => {
     const no = Number($('#waNo').value); errEl.textContent = '';
@@ -1746,13 +1898,16 @@ function openHistory() {
   const cur = P.viewing ? P.viewing.no : d.latest.no;
   openDrawer(`기록 · 버전 ${d.versions.length}개`, `
     <p class="muted small">저장할 때마다 버전이 하나씩 쌓여요. 눌러서 예전 코드를 보고, 실행해 볼 수 있어요.</p>
+    ${d.versions.length > 1 ? `<button class="btn small cmp-open" id="cmpOpen">↔ 두 버전 비교하기</button>` : ''}
     <ol class="vlist">${d.versions.map((v) => `
       <li><button class="vitem ${v.no === cur ? 'on' : ''}" data-no="${v.no}" ${v.no === cur ? 'aria-current="true"' : ''}>
         <span class="vtag">v${v.no}</span>
         <span class="vnote">${v.note ? esc(v.note) : '<span class="muted">메모 없음</span>'}</span>
         <span class="vmeta">${when(v.created_at)} · ${v.lines}줄${v.no === d.latest.no ? ' · <b>최신</b>' : ''}</span>
-      </button></li>`).join('')}</ol>`, (b) => {
+      </button>${v.no > 1 ? `<button class="vdiff" data-diff="${v.no}" title="v${v.no - 1}에서 무엇이 바뀌었는지 보기">↔ 바로 전 버전과 비교</button>` : ''}</li>`).join('')}</ol>`, (b) => {
     $$('.vitem', b).forEach((btn) => btn.addEventListener('click', () => { closeDrawer(); openVersion(Number(btn.dataset.no)); }));
+    $$('[data-diff]', b).forEach((btn) => btn.addEventListener('click', () => { const no = Number(btn.dataset.diff); closeDrawer(); compareModal(no - 1, no); }));
+    $('#cmpOpen', b) && $('#cmpOpen', b).addEventListener('click', () => { closeDrawer(); compareModal(d.versions[1].no, d.versions[0].no); });
   });
 }
 async function openVersion(no) {

@@ -8,7 +8,7 @@
 'use strict';
 
 window.MockDB = (() => {
-  const KEY = 'pyshare_demo_v6';
+  const KEY = 'pyshare_demo_v7';
   const MENTOR = 'mentor-demo-1234';
   const now = () => new Date().toISOString();
   const ago = (min) => new Date(Date.now() - min * 60000).toISOString();
@@ -114,7 +114,7 @@ for i in range(1, 10):
 
   function seed() {
     return {
-      seq: { m: 3, p: 4, v: 20, f: 2 },
+      seq: { m: 3, p: 4, v: 20, f: 3 },
       members: [
         { id: 1, code: 'DEMOTOKENMINT001', sid: '10101', nickname: '김민트', pin: '1111', pin_fails: 0, active: true, created_at: ago(60 * 24 * 7) },
         { id: 2, code: 'DEMOTOKENCHIP002', sid: '10102', nickname: '이감자', pin: '2222', pin_fails: 0, active: true, created_at: ago(60 * 24 * 7) },
@@ -151,9 +151,19 @@ for i in range(1, 10):
           summary: { topic: '수면시간 그래프 — 잠을 많이 자는 게 도움이 되는지 알아본다', progress: '', fields: ['① 데이터 분석'] },
           answers: { picked: ['data'], sid: '10101', sname: '김민트', sdate: '', mix: '', idea1: '시험 기간에 공부 계획 세우기가 귀찮다', idea2: '우리 반은 몇 시에 자는지 궁금하다',
             who: '우리 반 친구들', what: '수면시간 그래프', goal: '잠을 많이 자는 게 도움이 되는지 알아본다', mine: '수면시간 설문 구글폼 만들기', c1: true, c2: true, c3: false } },
-      ],
+      ].concat([
+        { member_id: 2, week: 2, done: 13, topic: '급식 메뉴 뽑기 — 메뉴 고민을 줄인다', fields: ['② 웹 서비스'] },
+        { member_id: 2, week: 3, done: 10, topic: '급식 메뉴 뽑기 — 여러 날 치를 한 번에', fields: ['② 웹 서비스'] },
+        { member_id: 3, week: 2, done: null, topic: '', fields: [] },
+      ].map((x) => ({ member_id: x.member_id, week: x.week, saved_at: ago(60 * 24 * (x.done || 1)), submitted_at: x.done ? ago(60 * 24 * x.done) : null, has_image: false,
+        items: [], summary: { topic: x.topic, progress: '', fields: x.fields }, answers: {} })), [
+        { member_id: 2, week: 6, saved_at: ago(90), submitted_at: ago(80), has_image: false, items: [],
+          summary: { topic: '급식 메뉴 뽑기', progress: '', fields: ['② 웹 서비스'] },
+          answers: { f: { title: '급식 메뉴 뽑기', oneLine: '오늘 뭐 먹지? 고민될 때 버튼 하나로 며칠 치 급식 메뉴를 골라 주는 웹앱이에요.' }, seed: {}, pid: 2 } },
+      ]),
       feedback: [
         { id: 1, project_id: 1, version_no: 2, body: 'while True와 break로 반복을 잘 끝냈어요! 숫자가 아닌 글자를 넣으면 어떻게 되는지 한 번 시험해 보고, 막는 방법도 생각해 봐요.', seen: true, created_at: ago(60 * 24) },
+        { id: 3, project_id: 2, version_no: 1, body: 'random.choice로 간단하게 잘 뽑았어요! 며칠 치를 한 번에 뽑을 수 있게 반복문을 써 보면 어떨까요?', seen: true, created_at: ago(60 * 24 * 4) },
         { id: 2, project_id: 1, version_no: 3, body: 'isdigit()로 잘 막았어요 👍 다음 도전: 시도 횟수를 7번으로 제한하고, 실패하면 정답을 알려 주게 바꿔 볼까요?', seen: false, created_at: ago(20) },
       ],
     };
@@ -166,7 +176,16 @@ for i in range(1, 10):
     if (!db.sheets) db.sheets = [];
     if (!db.files) db.files = [];   // 학생이 올린 CSV: { member_id, name, content, updated_at }
     if (!db.share_mode) db.share_mode = 'final';
+    if (!db.cls || !db.cls.notices) db.cls = seedCls();
   }
+  // 주차 공지 + 마무리 모드 (supabase_codeshare.sql 의 cs_week_notices, cs_settings.closed)
+  function seedCls() {
+    return { closed: false, closed_at: null, notices: {
+      4: { note: '설문 결과를 CSV로 내려받아서 [데이터]에 올려 두세요. 금요일 수업 전까지 4주차 활동지 제출!', at: ago(60 * 5) },
+      6: { note: '발표는 한 사람당 3분이에요. 웹앱 화면을 보여 주면서 [한 줄 소개]부터 말해요.', at: ago(60 * 24 * 10) },
+    } };
+  }
+  function openOnly(code) { if (db.cls && db.cls.closed && !who(code).mentor) err('활동이 마무리돼서 지금은 읽기만 할 수 있어요.'); }
   // 체험 모드의 활동지 이미지는 크기 때문에 따로 보관해요
   const imgKey = (mid, week) => `pyshare_demo_img_${mid}_${week}`;
   function save() { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} }
@@ -266,7 +285,16 @@ for i in range(1, 10):
         }
       }
       return { id: p.id, title: p.title, description: p.description, week: p.week ?? null, nickname: m.nickname, mine, mentor: w.mentor,
-        final_no: p.final_no ?? null, final_at: p.final_at ?? null, html: p.webapp ?? null, webapp_no: p.webapp_no ?? null, webapp_at: p.webapp_at ?? null };
+        final_no: p.final_no ?? null, final_at: p.final_at ?? null, html: p.webapp ?? null, webapp_no: p.webapp_no ?? null, webapp_at: p.webapp_at ?? null,
+        req_at: mine || w.mentor ? p.webapp_req_at ?? null : null, req_note: mine || w.mentor ? p.webapp_req_note ?? null : null };
+    },
+    cs_webapp_request({ p_code, p_id, p_note, p_cancel }) {
+      openOnly(p_code);
+      const p = owner(p_code, p_id);
+      if (p_cancel) { p.webapp_req_at = null; p.webapp_req_note = null; save(); return { ok: true, canceled: true }; }
+      if (String(p_note || '').length > 500) err('요청 메모는 500글자까지예요.');
+      p.webapp_req_at = now(); p.webapp_req_note = String(p_note || '').trim() || null; save();
+      return { ok: true, req_at: p.webapp_req_at };
     },
     cs_m_webapp_save({ p_code, p_id, p_html, p_no }) {
       mentorOnly(p_code); const p = proj(p_id);
@@ -278,6 +306,7 @@ for i in range(1, 10):
       return { ok: true, webapp_no: p.webapp_no };
     },
     cs_finalize({ p_code, p_id, p_no }) {
+      openOnly(p_code);
       const p = owner(p_code, p_id);
       if (p_no == null) { p.final_no = null; p.final_at = null; save(); return { ok: true, final_no: null }; }
       if (!ver(p.id, Number(p_no))) err('그 버전을 찾을 수 없어요.');
@@ -298,9 +327,12 @@ for i in range(1, 10):
             id: p.id, title: p.title, description: p.description, shared: p.shared, week: p.week ?? null, nickname: member(p.member_id).nickname,
             sid: w.mentor ? member(p.member_id).sid : null, mine, updated_at: t(p), final_no: p.final_no ?? null, final_at: p.final_at ?? null,
             has_webapp: !!p.webapp, webapp_no: p.webapp_no ?? null, webapp_at: p.webapp_at ?? null,
+            webapp_req_at: w.mentor || mine ? p.webapp_req_at ?? null : null, webapp_req_note: w.mentor || mine ? p.webapp_req_note ?? null : null,
             versions: hide ? null : v.no, preview: hide ? '' : v.code.slice(0, 400), lines: hide ? null : lines(v.code),
             unseen: mine ? db.feedback.filter((f) => f.project_id === p.id && !f.seen).length : 0,
             feedback: w.mentor ? db.feedback.filter((f) => f.project_id === p.id).length : 0,
+            fb_last_no: w.mentor ? Math.max(0, ...db.feedback.filter((f) => f.project_id === p.id).map((f) => f.version_no || 0)) : null,
+            created_at: w.mentor ? p.created_at : null,
           };
         });
     },
@@ -314,6 +346,7 @@ for i in range(1, 10):
         sid: c.mentor ? member(p.member_id).sid : null, mine: c.mine, mentor: c.mentor,
         updated_at: p.updated_at, final_no: p.final_no ?? null, final_at: p.final_at ?? null,
         has_webapp: !!p.webapp, webapp_no: p.webapp_no ?? null, webapp_at: p.webapp_at ?? null,
+        webapp_req_at: c.mine || c.mentor ? p.webapp_req_at ?? null : null, webapp_req_note: c.mine || c.mentor ? p.webapp_req_note ?? null : null,
         latest: { no: v.no, code: v.code, note: v.note, created_at: v.created_at },
         versions: db.versions.filter((x) => x.project_id === p.id).sort((a, b) => b.no - a.no).map((x) => ({ no: x.no, note: x.note, created_at: x.created_at, lines: lines(x.code) })),
         feedback: fb,
@@ -328,6 +361,7 @@ for i in range(1, 10):
       return { no: v.no, code: v.code, note: v.note, created_at: v.created_at };
     },
     cs_create({ p_code, p_title, p_desc, p_shared, p_src, p_week }) {
+      openOnly(p_code);
       const w = who(p_code);
       if (w.mid == null) err('프로젝트는 학생 코드로 들어와서 만들어요.');
       checkText(p_title, p_desc);
@@ -339,6 +373,7 @@ for i in range(1, 10):
       save(); return { id, no: 1 };
     },
     cs_save({ p_code, p_id, p_src, p_note }) {
+      openOnly(p_code);
       const p = owner(p_code, p_id);
       if (String(p_src || '').length > 100000) err('코드가 너무 길어요 (10만 글자까지).');
       if (String(p_note || '').length > 100) err('저장 메모는 100글자까지예요.');
@@ -349,11 +384,13 @@ for i in range(1, 10):
       p.updated_at = now(); save(); return { no, unchanged: false };
     },
     cs_update({ p_code, p_id, p_title, p_desc, p_shared, p_week }) {
+      openOnly(p_code);
       const p = owner(p_code, p_id); checkText(p_title, p_desc); checkWeek(p_week); p.week = p_week ?? null;
       p.title = p_title.trim(); p.description = String(p_desc || '').trim(); if (p_shared != null) p.shared = !!p_shared;
       save(); return { ok: true };
     },
     cs_delete({ p_code, p_id, p_confirm }) {
+      openOnly(p_code);
       const c = canSee(p_code, p_id);
       if (!(c.mine || c.mentor)) err('내 프로젝트만 지울 수 있어요.');
       if (String(p_confirm || '').trim() !== c.p.title) err('확인 칸에 프로젝트 이름을 똑같이 적어 주세요.');
@@ -369,6 +406,7 @@ for i in range(1, 10):
       return x ? sheetOut(x) : null;
     },
     cs_sheet_save({ p_code, p_week, p_answers, p_summary }) {
+      openOnly(p_code);
       const w = who(p_code); if (w.mid == null) err('활동지는 학생으로 들어와서 써요.');
       checkWeek(p_week);
       let x = db.sheets.find((s) => s.member_id === w.mid && s.week === Number(p_week));
@@ -377,6 +415,7 @@ for i in range(1, 10):
       return { saved_at: x.saved_at };
     },
     cs_sheet_submit({ p_code, p_week, p_answers, p_summary, p_image, p_items }) {
+      openOnly(p_code);
       const w = who(p_code); if (w.mid == null) err('활동지는 학생으로 들어와서 제출해요.');
       if (!/^data:image\/(jpeg|png|webp);base64,/.test(p_image || '')) err('활동지 이미지가 올바르지 않아요.');
       try { localStorage.setItem(imgKey(w.mid, p_week), p_image); } catch (e) { err('체험 모드 저장 공간이 부족해요. 이미지는 저장하지 못했어요.'); }
@@ -464,6 +503,7 @@ for i in range(1, 10):
     cs_project_files({ p_code, p_id }) { const c = canSee(p_code, p_id); return c.mine || c.mentor ? filesOf(c.p.member_id) : []; },
     cs_m_files({ p_code, p_mid }) { mentorOnly(p_code); return filesOf(Number(p_mid)); },
     cs_file_save({ p_code, p_name, p_content }) {
+      openOnly(p_code);
       const w = who(p_code); if (w.mid == null) err('학생만 파일을 올릴 수 있어요.');
       const n = String(p_name || '').trim();
       if (!/^[^/\\:*?"<>|]{1,60}\.(csv|tsv|txt)$/i.test(n) || n.startsWith('.')) err('파일 이름은 60글자 안으로, .csv 로 끝나게 해 주세요.');
@@ -475,8 +515,24 @@ for i in range(1, 10):
       save(); return { ok: true, name: n };
     },
     cs_file_delete({ p_code, p_name }) {
+      openOnly(p_code);
       const w = who(p_code); if (w.mid == null) err('학생만 파일을 지울 수 있어요.');
       db.files = db.files.filter((f) => !(f.member_id === w.mid && f.name === String(p_name || '').trim())); save(); return { ok: true };
+    },
+    // ---- 주차 공지, 마무리 모드 ----
+    cs_class({ p_code }) { who(p_code); return { closed: !!db.cls.closed, closed_at: db.cls.closed_at, notices: db.cls.notices || {} }; },
+    cs_m_week_notice({ p_code, p_week, p_note }) {
+      mentorOnly(p_code);
+      if (!(Number(p_week) >= 1 && Number(p_week) <= 20)) err('주차는 1~20 사이로 골라 주세요.');
+      const note = String(p_note || '').trim();
+      if (note.length > 300) err('공지는 300글자까지예요.');
+      if (!note) delete db.cls.notices[p_week]; else db.cls.notices[p_week] = { note, at: now() };
+      save(); return { ok: true };
+    },
+    cs_m_close({ p_code, p_on }) {
+      mentorOnly(p_code);
+      db.cls.closed = !!p_on; db.cls.closed_at = p_on ? now() : null; save();
+      return { closed: db.cls.closed };
     },
     cs_m_feedback_delete({ p_code, p_fid }) {
       mentorOnly(p_code);
