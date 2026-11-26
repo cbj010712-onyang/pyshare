@@ -1,8 +1,8 @@
 /* =====================================================================
-   활동지 ↔ 공유방 다리
+   활동지 ↔ 파이랩 다리
    활동지(week2.html 등)는 원래 쓰는 내용을 이 기기(localStorage)에만 저장했어요.
-   이 파일이 그 저장을 가로채서 공유방 서버에도 저장해요.
-     · 들어올 때: 공유방 로그인 확인 → 서버에 저장된 답을 불러와 활동지에 채움
+   이 파일이 그 저장을 가로채서 파이랩 서버에도 저장해요.
+     · 들어올 때: 파이랩 로그인 확인 → 서버에 저장된 답을 불러와 활동지에 채움
      · 쓰는 동안: 1초쯤 멈추면 서버에 자동 저장 (cs_sheet_save)
      · [제출하기]: 항목별 답(구역·질문·답) + 자동으로 만든 활동지 이미지 + 전체 답을 서버에 저장 (cs_sheet_submit)
      · 제출한 활동지는 위쪽 띠의 [이미지로 받기]로 언제든 내려받아요
@@ -38,12 +38,12 @@ window.SheetBridge = (() => {
   const hhmm = (iso) => { const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   const back = `./#w${WEEK}`;
 
-  // ---- 화면 위쪽 띠 (공유방 위쪽 막대와 같은 모양) ----
+  // ---- 화면 위쪽 띠 (파이랩 위쪽 막대와 같은 모양) ----
   function strip() {
     if (document.getElementById('sbStrip')) return;
     const el = document.createElement('header');
     el.className = 'sb-strip'; el.id = 'sbStrip';
-    el.innerHTML = `<a class="sb-brand" href="./#home"><span class="sb-prompt" aria-hidden="true">&gt;&gt;&gt;</span><span class="sb-name">파이썬 코드 공유방</span></a>
+    el.innerHTML = `<a class="sb-brand" href="./#home"><span class="sb-prompt" aria-hidden="true">&gt;&gt;&gt;</span><span class="sb-name">파이랩</span></a>
       <a class="sb-week" href="${back}">← ${WEEK}주차로</a>
       <span class="sb-status" id="sbStatus" role="status"></span>
       <button type="button" class="sb-dl" id="sbDl" hidden>제출한 이미지 받기</button>
@@ -57,7 +57,7 @@ window.SheetBridge = (() => {
   }
   function gate(msg) {
     const g = document.createElement('div'); g.className = 'sb-gate';
-    g.innerHTML = `<div><b>${msg}</b><p>활동지는 공유방에 로그인한 뒤에 쓸 수 있어요. 쓴 내용은 공유방에 저장돼서 다른 기기에서도 이어서 쓸 수 있어요.</p><a href="${back}">공유방으로 가기</a></div>`;
+    g.innerHTML = `<div><b>${msg}</b><p>활동지는 파이랩에 로그인한 뒤에 쓸 수 있어요. 쓴 내용은 파이랩에 저장돼서 다른 기기에서도 이어서 쓸 수 있어요.</p><a href="${back}">파이랩으로 가기</a></div>`;
     document.body.appendChild(g);
   }
   function note(text) {
@@ -127,7 +127,7 @@ window.SheetBridge = (() => {
     inflight = true;
     try {
       const r = await rpc('cs_sheet_save', { p_code: tok, p_week: WEEK, p_answers: answers(), p_summary: summary() });
-      lsDel(dirtyKey()); status('공유방에 저장됨 ' + hhmm(r.saved_at));
+      lsDel(dirtyKey()); status('파이랩에 저장됨 ' + hhmm(r.saved_at));
     } catch (e) {
       status(e.user ? e.message : '저장 실패 · 인터넷 연결을 확인해요 (이 기기에는 남아 있어요)', true);
       if (!e.user) { clearTimeout(timer); timer = setTimeout(flush, 5000); }
@@ -149,7 +149,7 @@ window.SheetBridge = (() => {
     let changed = false;
     if (sid && me.sid && sid.value !== me.sid) { sid.value = me.sid; changed = true; }
     if (nm && me.nickname && nm.value !== me.nickname) { nm.value = me.nickname; changed = true; }
-    [sid, nm].forEach((x) => { if (x) { x.readOnly = true; x.title = '공유방 로그인 정보로 채워져요'; } });
+    [sid, nm].forEach((x) => { if (x) { x.readOnly = true; x.title = '파이랩 로그인 정보로 채워져요'; } });
     if (changed && typeof window.save === 'function') window.save();
   }
   function lockAll() {
@@ -266,14 +266,14 @@ window.SheetBridge = (() => {
     if (!ol || !weeks.length || mode !== 'student') return;
     const prev = weeks[weeks.length - 1].no;
     const box = document.createElement('div'); box.className = 'sb-prev';
-    box.innerHTML = `<button type="button">공유방에 제출한 ${prev}주차 활동지 이미지 받기</button> <span style="font-size:.85rem;color:var(--sub)" role="status"></span>`;
+    box.innerHTML = `<button type="button">파이랩에 제출한 ${prev}주차 활동지 이미지 받기</button> <span style="font-size:.85rem;color:var(--sub)" role="status"></span>`;
     ol.after(box);
     const msg = box.querySelector('span');
     box.querySelector('button').addEventListener('click', async () => {
       msg.textContent = '불러오는 중…';
       try {
         const r = await rpc('cs_sheet_image', { p_code: tok, p_week: prev });
-        if (!r) { msg.textContent = `${prev}주차 활동지를 아직 제출하지 않았어요. 공유방에서 ${prev}주차 활동지를 열어 [제출하기]를 눌러 주세요.`; return; }
+        if (!r) { msg.textContent = `${prev}주차 활동지를 아직 제출하지 않았어요. 파이랩에서 ${prev}주차 활동지를 열어 [제출하기]를 눌러 주세요.`; return; }
         msg.textContent = '';
         showImage(r.image, `활동지_${me.nickname}_${prev}주차.jpg`);
       } catch (e) { msg.textContent = e.message; }
@@ -332,10 +332,10 @@ window.SheetBridge = (() => {
     async start(key, init) {
       fullKey = key;
       strip();
-      if (!tok) { gate('공유방에 먼저 로그인해 주세요.'); return; }
+      if (!tok) { gate('파이랩에 먼저 로그인해 주세요.'); return; }
       status('불러오는 중…');
       try { me = await rpc('cs_login', { p_code: tok }); }
-      catch (e) { gate(e.user ? '로그인이 풀렸어요. 공유방에서 다시 들어와 주세요.' : e.message); return; }
+      catch (e) { gate(e.user ? '로그인이 풀렸어요. 파이랩에서 다시 들어와 주세요.' : e.message); return; }
 
       if (me.role === 'mentor') {
         if (viewMid) {
@@ -351,7 +351,7 @@ window.SheetBridge = (() => {
         }
         mode = 'preview'; writeLocal(null); init();
         document.getElementById('sbWho').textContent = '멘토 · 미리보기';
-        note('멘토 미리보기예요. 써 볼 수 있지만 공유방에는 저장되지 않아요.');
+        note('멘토 미리보기예요. 써 볼 수 있지만 파이랩에는 저장되지 않아요.');
         status('저장 안 됨 (미리보기)');
         return;
       }
@@ -367,13 +367,13 @@ window.SheetBridge = (() => {
       prevButton();
       carryBar();
       if (localDirty) schedule(300);                 // 지난번에 못 올린 내용부터 올려요
-      else if (failed) status('공유방에서 불러오지 못했어요. 이 기기에 있는 내용으로 열었어요.', true);
-      else if (server) status(server.submitted_at ? `제출함 ${hhmm(server.submitted_at)} · 고치면 다시 제출해요` : `공유방에 저장됨 ${hhmm(server.saved_at)}`);
-      else status('쓰는 대로 공유방에 저장돼요');
+      else if (failed) status('파이랩에서 불러오지 못했어요. 이 기기에 있는 내용으로 열었어요.', true);
+      else if (server) status(server.submitted_at ? `제출함 ${hhmm(server.submitted_at)} · 고치면 다시 제출해요` : `파이랩에 저장됨 ${hhmm(server.saved_at)}`);
+      else status('쓰는 대로 파이랩에 저장돼요');
       if (server && server.has_image) document.getElementById('sbDl').hidden = false;
     },
     async submit(canvas) {
-      if (mode !== 'student') return { ok: false, msg: mode === 'view' ? '멘토 보기에서는 제출하지 않아요.' : '멘토 미리보기라 공유방에는 제출되지 않아요.' };
+      if (mode !== 'student') return { ok: false, msg: mode === 'view' ? '멘토 보기에서는 제출하지 않아요.' : '멘토 미리보기라 파이랩에는 제출되지 않아요.' };
       clearTimeout(timer); timer = null;
       try {
         const its = items();
@@ -381,7 +381,7 @@ window.SheetBridge = (() => {
         lsDel(dirtyKey());
         status('제출함 ' + hhmm(r.submitted_at));
         document.getElementById('sbDl').hidden = false;
-        return { ok: true, msg: `제출했어요! 항목 ${r.items ?? its.length}개의 답과 활동지 이미지가 공유방에 저장됐어요. 이미지가 필요하면 [이미지로 받기]를 눌러요.` };
+        return { ok: true, msg: `제출했어요! 항목 ${r.items ?? its.length}개의 답과 활동지 이미지가 파이랩에 저장됐어요. 이미지가 필요하면 [이미지로 받기]를 눌러요.` };
       } catch (e) {
         status('제출 실패', true);
         return { ok: false, msg: '제출하지 못했어요: ' + (e.message || '다시 눌러 주세요.') };

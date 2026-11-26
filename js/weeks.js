@@ -3,7 +3,8 @@
    - sheet   : 활동지 파일 이름. 비우면 "활동지 없음"
    - goal    : 이번 주 목표 한 줄
    - todo    : 이번 주 할 일 {t: 제목, d: 설명, sub: [세부], act: 'sheet'(활동지 버튼) | 'code'(코드 버튼)}
-   - examples: 예시 코드 {id, field: 'data' | 'web' | 'sec' | 'all', title, desc, code}
+   - examples: 예시 코드 {id, field: 'data' | 'web' | 'sec' | 'all', title, desc, code, files}
+               files: 예시가 읽는 CSV 파일 이름 (아래 PYSHARE_CSV 에 있는 것)
                학생이 [이 예시로 시작]을 누르면 이 코드로 새 프로젝트가 만들어져요
    예시 코드를 고칠 때는 code 글자 안의 \n(줄바꿈)과 \" (따옴표 앞 역슬래시)를 지켜요.
    ===================================================================== */
@@ -44,7 +45,7 @@ window.PYSHARE_WEEKS = [
    },
    {
     "t": "활동지 [제출하기]",
-    "d": "맨 아래 [제출하기]를 누르면 항목별 답과 활동지 이미지가 공유방에 저장돼요. 이 이미지는 3주차에 AI 피드백을 받을 때 써요.",
+    "d": "맨 아래 [제출하기]를 누르면 항목별 답과 활동지 이미지가 파이랩에 저장돼요. 이 이미지는 3주차에 AI 피드백을 받을 때 써요.",
     "act": "sheet"
    },
    {
@@ -75,7 +76,7 @@ window.PYSHARE_WEEKS = [
   "todo": [
    {
     "t": "2주차 활동지 이미지 받기",
-    "d": "활동지 1번 아래 [공유방에 제출한 2주차 활동지 이미지 받기]를 눌러 이미지를 내 기기에 받아요.",
+    "d": "활동지 1번 아래 [파이랩에 제출한 2주차 활동지 이미지 받기]를 눌러 이미지를 내 기기에 받아요.",
     "act": "sheet"
    },
    {
@@ -97,7 +98,7 @@ window.PYSHARE_WEEKS = [
    },
    {
     "t": "3주차 코드 제출: 직접 코딩",
-    "d": "활동지의 \"직접 코딩\" 할 일을 Colab 대신 공유방에서 해도 돼요. 내 분야 예시 코드로 시작해서 보기·규칙·질문을 내 주제로 바꾸고 ▶ 실행한 뒤 [저장]해요.",
+    "d": "활동지의 \"직접 코딩\" 할 일을 Colab 대신 파이랩에서 해도 돼요. 내 분야 예시 코드로 시작해서 보기·규칙·질문을 내 주제로 바꾸고 ▶ 실행한 뒤 [저장]해요.",
     "act": "code",
     "sub": [
      "데이터 분석: answers 를 내 설문 보기로 바꾸고 count 로 세기",
@@ -107,7 +108,7 @@ window.PYSHARE_WEEKS = [
    },
    {
     "t": "코드와 실행 결과를 활동지에 붙여 넣고 [제출하기]",
-    "d": "공유방에서 쓴 코드를 복사해 활동지의 \"내가 쓴 코드\" 칸에 붙여 넣고, 실행 결과도 적어요. 그다음 [제출하기].",
+    "d": "파이랩에서 쓴 코드를 복사해 활동지의 \"내가 쓴 코드\" 칸에 붙여 넣고, 실행 결과도 적어요. 그다음 [제출하기].",
     "act": "sheet"
    },
    {
@@ -122,6 +123,16 @@ window.PYSHARE_WEEKS = [
     "title": "설문 응답 개수 세기",
     "desc": "리스트와 count, for 반복문으로 보기마다 몇 명인지 세요.",
     "code": "# 할 일\n#  1) answers 를 내 설문 보기로 바꿔요 (반 친구 10명이 대답했다고 생각하고)\n#  2) options 에 보기 종류를 모두 적어요\n#  3) ▶ 실행해서 보기마다 몇 명인지 확인해요\n\nanswers = [\"학원\", \"집\", \"학원\", \"독서실\", \"학원\", \"집\", \"도서관\", \"학원\", \"집\", \"독서실\"]\noptions = [\"학원\", \"집\", \"독서실\", \"도서관\"]\n\nprint(\"전체 응답:\", len(answers), \"명\")\nfor option in options:\n    count = answers.count(option)    # 리스트 안에 option 이 몇 번 있는지 세요\n    print(option, \":\", count, \"명\")\n\n# 도전: 가장 많이 나온 보기를 찾아서 \"가장 많은 답은 ○○예요\"라고 출력해 보세요.\n#       힌트) max(options, key=answers.count)\n"
+   },
+   {
+    "id": "w3-csv",
+    "field": "data",
+    "title": "CSV 파일 열어 보기",
+    "desc": "pandas로 설문 CSV를 불러와서 응답 수, 질문 이름, 보기별 응답 수를 봐요. 다음 주 read_csv 연습이에요.",
+    "files": [
+     "study_survey.csv"
+    ],
+    "code": "# 할 일\n#  1) ▶ 실행해서 CSV 파일 안에 무엇이 있는지 봐요\n#  2) 열 이름 하나를 골라 value_counts() 줄의 열 이름을 바꿔 실행해 봐요\n#  3) 다음 주에는 \"study_survey.csv\"를 내 설문 CSV 파일 이름으로 바꿔요\n# 쓰는 파일: study_survey.csv (편집기 위 [📄 데이터]에서 미리 볼 수 있어요)\n\nimport pandas as pd\n\ndf = pd.read_csv(\"study_survey.csv\")     # CSV 파일 → 표(DataFrame)\n\nprint(\"응답 수:\", len(df), \"명\")\nprint(\"질문(열) 이름:\")\nfor col in df.columns:\n    print(\" -\", col)\n\nprint()\nprint(\"[첫 번째 응답]\")\nprint(df.iloc[0])                          # 0번 줄(첫 응답)을 세로로 보기\n\nprint()\nprint(\"[공부하는 곳별 응답 수]\")\nprint(df[\"주로 어디에서 공부하나요?\"].value_counts())\n\n# 도전: 휴대폰 사용 시간의 평균을 구해 보세요.\n#       힌트) df[\"하루 휴대폰 사용 시간 (시간)\"].mean()\n"
    },
    {
     "id": "w3-web",
@@ -152,7 +163,7 @@ window.PYSHARE_WEEKS = [
    },
    {
     "t": "활동지 2번: 3주차 활동지로 AI 피드백 받기",
-    "d": "[공유방에 제출한 3주차 활동지 이미지 받기]로 이미지를 받아 AI에게 올리고, 피드백 중 반영할 것 한 가지를 적어요. 활동지 위쪽 [3주차 불러오기]로 3주차 답을 옆에 띄워 놓고 주제와 설계를 보충해요."
+    "d": "[파이랩에 제출한 3주차 활동지 이미지 받기]로 이미지를 받아 AI에게 올리고, 피드백 중 반영할 것 한 가지를 적어요. 활동지 위쪽 [3주차 불러오기]로 3주차 답을 옆에 띄워 놓고 주제와 설계를 보충해요."
    },
    {
     "t": "보강 할 일 (추천된 경우)",
@@ -162,7 +173,7 @@ window.PYSHARE_WEEKS = [
     "t": "분야별 실전노트",
     "d": "선생님이 공유한 Colab 실전노트를 차례로 실행해요.",
     "sub": [
-     "데이터 분석: 설문 배포·응답 수 확인 → 실전노트 1-1 ~ 1-4 → 내 설문 응답 불러와 정리",
+     "데이터 분석: 설문 배포·응답 수 확인 → 실전노트 1-1 ~ 1-4 → 내 설문 응답 CSV 불러와 정리 (파이랩 편집기의 [📄 데이터]에서 내 CSV를 올리면 파이랩에서도 read_csv로 읽을 수 있어요)",
      "미니 웹앱: 실전노트 2-1 ~ 2-4 → RULES 를 내 규칙 표로 → assert 테스트 만들기",
      "AI 윤리·보안: 실전노트 3-1 ~ 3-4 → 퀴즈를 내 문제 5개로 → 결과 메시지 바꾸기"
     ]
@@ -174,7 +185,7 @@ window.PYSHARE_WEEKS = [
    },
    {
     "t": "활동지 [제출하기]",
-    "d": "활동지의 코드 칸에도 공유방 코드를 붙여 넣고 제출해요.",
+    "d": "활동지의 코드 칸에도 파이랩 코드를 붙여 넣고 제출해요.",
     "act": "sheet"
    },
    {
@@ -189,6 +200,16 @@ window.PYSHARE_WEEKS = [
     "title": "그룹별 평균 구하기",
     "desc": "딕셔너리 목록으로 응답을 정리하고, 함수로 그룹별 평균과 결과 문장을 만들어요.",
     "code": "# 할 일\n#  1) rows 를 내 설문 응답으로 바꿔요 (구글폼 응답을 보고 옮겨 적어도 돼요)\n#  2) group_average 로 그룹별 평균을 확인해요\n#  3) 함수 위의 # 주석을 내 말로 다시 써 보세요\n\nrows = [\n    {\"place\": \"학원\", \"hours\": 3},\n    {\"place\": \"집\", \"hours\": 1},\n    {\"place\": \"독서실\", \"hours\": 4},\n    {\"place\": \"학원\", \"hours\": 2},\n    {\"place\": \"집\", \"hours\": 2},\n    {\"place\": \"독서실\", \"hours\": 5},\n    {\"place\": \"학원\", \"hours\": 3},\n]\n\n# [무엇을] 그룹별 평균을 구해요\n# [입력] 응답 목록, 그룹으로 나눌 칸 이름, 평균 낼 칸 이름\n# [출력] {그룹: 평균} 딕셔너리\ndef group_average(rows, key, value):\n    total = {}\n    count = {}\n    for row in rows:\n        k = row[key]\n        total[k] = total.get(k, 0) + row[value]\n        count[k] = count.get(k, 0) + 1\n    return {k: total[k] / count[k] for k in total}\n\nresult = group_average(rows, \"place\", \"hours\")\nfor place, avg in result.items():\n    print(f\"{place}: 평균 {avg:.1f}시간\")\n\nbest = max(result, key=result.get)\nprint(f\"결과: 평균 공부 시간이 가장 긴 곳 → {best} ({result[best]:.1f}시간)\")\n\n# 도전: 그룹별 응답 수도 함께 출력해 보세요. (예: 학원 3명)\n"
+   },
+   {
+    "id": "w4-csv",
+    "field": "data",
+    "title": "CSV로 그룹별 평균",
+    "desc": "설문 CSV를 불러와 열 이름을 짧게 바꾸고, 장소별 평균 공부 시간을 구해 결과 문장을 만들어요.",
+    "files": [
+     "study_survey.csv"
+    ],
+    "code": "# 할 일\n#  1) 파일 이름을 내 설문 CSV로 바꿔요 ([📄 데이터]에서 내 CSV를 올리면 이름이 보여요)\n#  2) 열 이름 바꾸기: columns 의 이름을 내 질문 순서에 맞게 짧게 바꿔요\n#  3) groupby 줄의 \"무엇별로\"와 \"무엇의 평균\"을 내 주제로 바꿔요\n# 쓰는 파일: study_survey.csv\n\nimport pandas as pd\n\n# 1. 불러오기\ndf = pd.read_csv(\"study_survey.csv\")\n\n# 2. 열 이름을 짧게 바꾸기 (구글폼 질문은 너무 길어요)\ndf.columns = [\"시간\", \"장소\", \"공부\", \"수면\", \"휴대폰\", \"아침\"]\n\n# 3. 정리하기: 빈칸이 있는 응답은 빼요\ndf = df.dropna()\nprint(\"정리한 응답:\", len(df), \"명\")\nprint()\n\n# 4. 그룹별 평균: 장소별 평균 공부 시간 (높은 순)\navg = df.groupby(\"장소\")[\"공부\"].mean().sort_values(ascending=False)\ncount = df[\"장소\"].value_counts()\nfor place, hours in avg.items():\n    print(f\"{place}: 평균 {hours:.1f}시간 ({count[place]}명)\")\n\nbest = avg.index[0]\nprint()\nprint(f\"결과: 평균 공부 시간이 가장 긴 곳은 {best}({avg.iloc[0]:.1f}시간)이에요.\")\n\n# 도전: 아침을 먹은 사람과 안 먹은 사람의 평균 수면 시간을 비교해 보세요.\n#       힌트) df.groupby(\"아침\")[\"수면\"].mean()\n"
    },
    {
     "id": "w4-web",
@@ -248,6 +269,16 @@ window.PYSHARE_WEEKS = [
     "code": "# 할 일\n#  1) answers 를 마감한 내 설문의 진짜 응답으로 바꿔요\n#  2) ▶ 실행해서 막대그래프와 결과 문장을 확인해요\n#  3) 결과 문장을 내가 발표 때 말할 한 문장으로 고쳐요\n\nanswers = [\"학원\", \"집\", \"학원\", \"독서실\", \"학원\", \"집\", \"도서관\", \"학원\", \"집\", \"독서실\", \"학원\", \"집\"]\n\n# [무엇을] 보기마다 몇 명인지 세요  [입력] 응답 리스트  [출력] {보기: 명수} (많은 순)\ndef count_answers(answers):\n    counts = {}\n    for a in answers:\n        counts[a] = counts.get(a, 0) + 1\n    return dict(sorted(counts.items(), key=lambda kv: kv[1], reverse=True))\n\ncounts = count_answers(answers)\ntotal = len(answers)\n\nprint(f\"응답 {total}명 · 보기별 막대그래프\")\nfor option, n in counts.items():\n    bar = \"█\" * n                                 # 한 명에 한 칸\n    print(f\"{option:<4} {bar} {n}명 ({n * 100 // total}%)\")\n\ntop = next(iter(counts))\nprint()\nprint(f\"결과: 우리 반에서 가장 많은 답은 '{top}'({counts[top]}명)이에요.\")\n\n# 도전: matplotlib 으로 진짜 그래프 그리기 (그래프 글자는 영어로 써요)\n# import matplotlib.pyplot as plt\n# plt.bar([\"academy\", \"home\", \"reading room\", \"library\"], [5, 4, 2, 1])\n# plt.title(\"Where do we study?\")\n# plt.show()\n"
    },
    {
+    "id": "w5-csv",
+    "field": "data",
+    "title": "CSV로 그래프와 결과 문장",
+    "desc": "급식 별점 CSV로 메뉴별 평균을 구해 글자 막대그래프와 진짜 그래프(matplotlib)를 그리고 결과 문장을 써요.",
+    "files": [
+     "lunch_rating.csv"
+    ],
+    "code": "# 할 일\n#  1) 파일 이름과 열 이름(\"메뉴\", \"별점\")을 내 설문에 맞게 바꿔요\n#  2) ▶ 실행해서 글자 막대그래프와 진짜 그래프를 확인해요\n#  3) 마지막 결과 문장을 발표 때 말할 한 문장으로 고쳐요\n# 쓰는 파일: lunch_rating.csv\n\nimport pandas as pd\nimport matplotlib.pyplot as plt\n\ndf = pd.read_csv(\"lunch_rating.csv\")\nprint(\"별점 수:\", len(df), \"개\")\n\n# 메뉴별 평균 별점 (높은 순)\navg = df.groupby(\"메뉴\")[\"별점\"].mean().sort_values(ascending=False)\n\nprint()\nprint(\"[메뉴별 평균 별점]\")\nfor menu, star in avg.items():\n    bar = \"★\" * round(star)                   # 반올림한 별 개수만큼\n    print(f\"{menu} {bar} {star:.1f}점\")\n\n# 진짜 그래프: 그래프 안 글자는 영어로 써요 (한글 글꼴이 없어서 네모로 나와요)\nnames = {\"돈가스\": \"Pork cutlet\", \"카레라이스\": \"Curry\", \"짜장면\": \"Jajangmyeon\",\n         \"비빔밥\": \"Bibimbap\", \"떡볶이\": \"Tteokbokki\", \"김치찌개\": \"Kimchi stew\"}\nlabels = [names.get(m, m) for m in avg.index]\n\nplt.figure(figsize=(7, 4))\nplt.bar(labels, avg.values, color=\"#1d6ff2\")\nplt.ylim(0, 5)\nplt.title(\"Average rating by lunch menu\")\nplt.ylabel(\"stars (1-5)\")\nplt.xticks(rotation=20)\nplt.tight_layout()\nplt.show()\n\ntop, low = avg.index[0], avg.index[-1]\nprint()\nprint(f\"결과: 우리 반이 가장 좋아한 메뉴는 '{top}'({avg.iloc[0]:.1f}점), 가장 아쉬운 메뉴는 '{low}'({avg.iloc[-1]:.1f}점)이에요.\")\n\n# 도전: \"남긴 양\"이 \"많이\"인 응답이 가장 많은 메뉴를 찾아보세요.\n#       힌트) df[df[\"남긴 양\"] == \"많이\"][\"메뉴\"].value_counts()\n"
+   },
+   {
     "id": "w5-web",
     "field": "web",
     "title": "반복 메뉴와 입력 검사",
@@ -305,4 +336,11 @@ window.PYSHARE_WEEKS = [
    }
   ]
  }
+];
+
+// 예시 CSV 파일 (csv 폴더에 있어요). 코드에서 pd.read_csv("이름.csv") 로 읽어요.
+// 새 파일을 넣으려면 csv 폴더에 파일을 올리고 여기에 한 줄 추가해요.
+window.PYSHARE_CSV = [
+  { name: 'study_survey.csv', title: '공부 습관 설문 (24명)', desc: '구글폼 응답을 CSV로 내려받은 모양이에요. 공부 장소, 공부·수면·휴대폰 시간, 아침 식사를 물었어요.' },
+  { name: 'lunch_rating.csv', title: '급식 메뉴 별점 (37개)', desc: '날짜, 요일, 메뉴, 별점(1~5), 남긴 양을 적은 표예요.' },
 ];

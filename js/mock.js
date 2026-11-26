@@ -164,6 +164,7 @@ for i in range(1, 10):
     try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) { db = null; }
     if (!db || !db.members) db = seed();
     if (!db.sheets) db.sheets = [];
+    if (!db.files) db.files = [];   // 학생이 올린 CSV: { member_id, name, content, updated_at }
     if (!db.share_mode) db.share_mode = 'final';
   }
   // 체험 모드의 활동지 이미지는 크기 때문에 따로 보관해요
@@ -185,6 +186,8 @@ for i in range(1, 10):
     if (code === MENTOR) return { mid: null, mentor: true };
     err('로그인 정보가 맞지 않아요. 다시 로그인해 주세요.');
   }
+  const filesOf = (mid) => db.files.filter((f) => f.member_id === mid).sort((a, b) => a.name.localeCompare(b.name))
+    .map((f) => ({ name: f.name, content: f.content, size: new TextEncoder().encode(f.content).length, updated_at: f.updated_at }));
   function mentorOnly(code) { if (!who(code).mentor) err('멘토만 할 수 있어요.'); }
   function canSee(code, id) {
     const w = who(code); const p = proj(id);
@@ -444,6 +447,7 @@ for i in range(1, 10):
       db.versions = db.versions.filter((v) => !pids.includes(v.project_id));
       db.feedback = db.feedback.filter((f) => !pids.includes(f.project_id));
       db.sheets = db.sheets.filter((x) => x.member_id !== m.id);
+      db.files = db.files.filter((x) => x.member_id !== m.id);
       save(); return { ok: true };
     },
     cs_m_feedback({ p_code, p_id, p_no, p_body }) {
@@ -454,6 +458,25 @@ for i in range(1, 10):
       const id = ++db.seq.f;
       db.feedback.push({ id, project_id: Number(p_id), version_no: p_no, body: p_body.trim(), seen: false, created_at: now() });
       save(); return { id };
+    },
+    // ---- 데이터 파일 (CSV) ----
+    cs_files({ p_code }) { const w = who(p_code); return w.mid == null ? [] : filesOf(w.mid); },
+    cs_project_files({ p_code, p_id }) { const c = canSee(p_code, p_id); return c.mine || c.mentor ? filesOf(c.p.member_id) : []; },
+    cs_m_files({ p_code, p_mid }) { mentorOnly(p_code); return filesOf(Number(p_mid)); },
+    cs_file_save({ p_code, p_name, p_content }) {
+      const w = who(p_code); if (w.mid == null) err('학생만 파일을 올릴 수 있어요.');
+      const n = String(p_name || '').trim();
+      if (!/^[^/\\:*?"<>|]{1,60}\.(csv|tsv|txt)$/i.test(n) || n.startsWith('.')) err('파일 이름은 60글자 안으로, .csv 로 끝나게 해 주세요.');
+      if (!String(p_content || '').trim()) err('빈 파일이에요.');
+      if (new TextEncoder().encode(p_content).length > 300 * 1024) err('파일이 너무 커요. 300KB까지 올릴 수 있어요.');
+      const old = db.files.find((f) => f.member_id === w.mid && f.name === n);
+      if (!old && db.files.filter((f) => f.member_id === w.mid).length >= 10) err('파일은 10개까지 올릴 수 있어요. 쓰지 않는 파일을 지워 주세요.');
+      if (old) { old.content = p_content; old.updated_at = now(); } else db.files.push({ member_id: w.mid, name: n, content: p_content, updated_at: now() });
+      save(); return { ok: true, name: n };
+    },
+    cs_file_delete({ p_code, p_name }) {
+      const w = who(p_code); if (w.mid == null) err('학생만 파일을 지울 수 있어요.');
+      db.files = db.files.filter((f) => !(f.member_id === w.mid && f.name === String(p_name || '').trim())); save(); return { ok: true };
     },
     cs_m_feedback_delete({ p_code, p_fid }) {
       mentorOnly(p_code);

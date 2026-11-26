@@ -48,7 +48,7 @@ const PyRunner = (() => {
       const indexURL = new URL(cfg.pyodide || 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/', location.href).href;
       this.ready = (async () => {
         await ensureSW();
-        const w = new Worker('js/py-worker.js?v=20261125j');
+        const w = new Worker('js/py-worker.js?v=20261126b');
         this.worker = w;
         const base = new URL('.', location.href).href;
         await new Promise((resolve, reject) => {
@@ -69,12 +69,13 @@ const PyRunner = (() => {
       return this.ready;
     }
 
-    async run(code, preset) {
+    // files: [{ name: 'study_survey.csv', text: '...' }] → 실행 폴더에 넣어 줘요
+    async run(code, preset, files) {
       if (this.running) return;
       await this.start();
       this.running = true;
       this.outCount = 0;
-      this.worker.postMessage({ t: 'run', code, preset: preset || [] });
+      this.worker.postMessage({ t: 'run', code, preset: preset || [], files: files || [] });
     }
 
     // 무한 반복·입력 기다리는 중에도 바로 멈춰요. 워커를 새로 만들어야 해서 다음 실행은 1~2초 걸려요.

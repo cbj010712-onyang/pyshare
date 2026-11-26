@@ -127,7 +127,11 @@ HINTS = {
     'ValueError': '값이 알맞지 않아요. 예: int("abc")처럼 숫자가 아닌 글자를 숫자로 바꾸려 했는지 확인해 보세요.',
     'ZeroDivisionError': '0으로 나눌 수 없어요. 나누는 수가 0이 되는 경우를 if로 먼저 막아 보세요.',
     'IndexError': '리스트 범위를 벗어났어요. 번호는 0부터 시작하고, 마지막 번호는 len() - 1이에요.',
-    'KeyError': '딕셔너리에 없는 키를 찾았어요. 키 이름의 철자나 in 으로 먼저 확인해 보세요.',
+    'KeyError': '없는 키(이름)를 찾았어요. 딕셔너리라면 키 철자를, 표(DataFrame)라면 열 이름 철자와 띄어쓰기를 확인해 보세요. print(df.columns)로 열 이름을 볼 수 있어요.',
+    'FileNotFoundError': '파일을 찾지 못했어요. 파일 이름의 철자와 .csv 를 확인해 보세요. 편집기 위 [📄 데이터]에서 쓸 수 있는 파일 이름을 볼 수 있고, 내 CSV는 거기서 올려요.',
+    'UnicodeDecodeError': '파일 글자를 읽지 못했어요. [📄 데이터]에서 CSV를 다시 올리면 글자가 깨지지 않게 바꿔서 넣어 줘요.',
+    'EmptyDataError': 'CSV 파일이 비어 있어요. 파일 안에 내용이 있는지 확인해 보세요.',
+    'ParserError': 'CSV 모양이 맞지 않아요. 줄마다 쉼표(,)로 나뉜 칸 수가 같은지 확인해 보세요.',
     'AttributeError': '그 자료에는 그런 기능(메서드)이 없어요. 철자나 자료형을 확인해 보세요.',
     'RecursionError': '함수가 자기 자신을 너무 많이 불렀어요. 멈추는 조건이 있는지 확인해 보세요.',
     'EOFError': '',
@@ -292,7 +296,7 @@ def _report(e):
     hint = HINTS.get(name, '')
     if name == 'ModuleNotFoundError':
         mod = (getattr(e, 'name', '') or '').split('.')[0]
-        hint = NO_MODULE.get(mod, '이 사이트에서는 파이썬 기본 모듈(random, math, time 등)과 numpy·matplotlib 정도만 쓸 수 있어요.')
+        hint = NO_MODULE.get(mod, '이 사이트에서는 파이썬 기본 모듈(random, math, csv 등)과 numpy·pandas·matplotlib 정도만 쓸 수 있어요. pandas·matplotlib은 인터넷이 연결돼 있어야 불러올 수 있어요.')
     if isinstance(e, KeyboardInterrupt): hint = ''
     return [line, name, hint]
 
@@ -344,7 +348,7 @@ def _run(src):
         hint = HINTS.get(name, '')
         if name == 'ModuleNotFoundError':
             mod = (getattr(e, 'name', '') or '').split('.')[0]
-            hint = NO_MODULE.get(mod, '이 사이트에서는 파이썬 기본 모듈(random, math, time 등)과 numpy·matplotlib 정도만 쓸 수 있어요.')
+            hint = NO_MODULE.get(mod, '이 사이트에서는 파이썬 기본 모듈(random, math, csv 등)과 numpy·pandas·matplotlib 정도만 쓸 수 있어요. pandas·matplotlib은 인터넷이 연결돼 있어야 불러올 수 있어요.')
         if isinstance(e, KeyboardInterrupt): hint = ''
         return [line, name, hint]
     finally:
@@ -398,13 +402,24 @@ async function init(indexURL, stdlibJs) {
   postMessage({ t: 'ready', interactive, version: py.version });
 }
 
-async function run(code, preset) {
+// CSV 같은 데이터 파일을 실행 폴더에 넣어요 → 코드에서 open("이름.csv"), pd.read_csv("이름.csv") 로 읽어요
+function putFiles(files) {
+  for (const f of Array.isArray(files) ? files : []) {
+    const name = String(f && f.name || '');
+    if (!/^[^/\\:*?"<>|]{1,80}\.(csv|txt|tsv)$/i.test(name) || name.startsWith('.')) continue;
+    try { py.FS.writeFile(name, String(f.text ?? ''), { encoding: 'utf8' }); } catch (e) {}
+  }
+}
+
+async function run(code, preset, files) {
   presetInput = Array.isArray(preset) ? preset.slice() : [];
   buf = ''; last = Date.now();
+  putFiles(files);
+  let want = [];
   try {
     // import numpy / matplotlib 이 있으면 먼저 불러와요 (처음 한 번은 오래 걸려요)
     const imports = py.pyodide_py.code.find_imports(code).toJs();
-    const want = imports.filter((m) => ['numpy', 'matplotlib', 'pandas'].includes(m));
+    want = imports.filter((m) => ['numpy', 'matplotlib', 'pandas'].includes(m));
     if (want.length) {
       postMessage({ t: 'status', s: want.join(', ') + ' 불러오는 중… (처음엔 조금 걸려요)' });
       await py.loadPackage(want.includes('matplotlib') ? [...want, 'matplotlib'] : want);
@@ -415,6 +430,8 @@ async function run(code, preset) {
     }
   } catch (e) {
     // 문법 오류면 find_imports가 실패해요. 그대로 실행해서 오류 안내를 보여 줘요.
+    // 패키지를 못 불러온 경우(인터넷 끊김 등)는 실행하면 ModuleNotFoundError 안내가 나와요.
+    if (want.length) postMessage({ t: 'status', s: '' });
   }
   const asyncFn = py.globals.get('_run_async');
   let res = null;
@@ -448,7 +465,7 @@ self.onmessage = async (e) => {
       const p = pendingInput;
       if (p && p.id === d.id) { pendingInput = null; p.resolve(String(d.value ?? '')); }
     } else if (d.t === 'run') {
-      await run(String(d.code || ''), d.preset);
+      await run(String(d.code || ''), d.preset, d.files);
     }
   } catch (err) {
     postMessage({ t: 'fatal', s: String(err && err.message || err) });

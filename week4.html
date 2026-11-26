@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>4주차 활동지 · 파이썬 코드 공유방</title>
-<script src="config.js?v=20261125j"></script>
-<script src="js/weeks.js?v=20261125j"></script>
-<script src="js/mock.js?v=20261125j"></script>
-<script src="js/api.js?v=20261125j"></script>
-<script src="js/sheet-bridge.js?v=20261125j" data-week="4"></script>
+<title>4주차 활동지 · 파이랩</title>
+<script src="config.js?v=20261126b"></script>
+<script src="js/weeks.js?v=20261126b"></script>
+<script src="js/mock.js?v=20261126b"></script>
+<script src="js/api.js?v=20261126b"></script>
+<script src="js/sheet-bridge.js?v=20261126b" data-week="4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -21,18 +21,6 @@
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
-    --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --done: #5FBF93;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #18181A; --paper: #222225; --ink: #ECECEA; --sub: #A3A3A0; --line: #3A3A3D; --soft: #2B2B2E;
-  --data: #5FBF93; --web: #F08A5C; --sec: #A792F0; --done: #5FBF93;
-  color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: inherit; }
 html { scroll-padding-top: env(safe-area-inset-top, 0px); }
@@ -187,7 +175,7 @@ button.ghost { background: transparent; color: var(--sub); border: 1px solid var
 }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
-<link rel="stylesheet" href="css/sheet.css?v=20261125j">
+<link rel="stylesheet" href="css/sheet.css?v=20261126b">
 </head>
 <body>
 <main>
@@ -283,7 +271,7 @@ button.ghost { background: transparent; color: var(--sub); border: 1px solid var
 </main>
 
 <div class="bar"><div class="bar-in">
-  <span class="saved">쓰는 내용은 공유방에 자동으로 저장돼요</span>
+  <span class="saved">쓰는 내용은 파이랩에 자동으로 저장돼요</span>
   <button type="button" class="ghost" id="resetBtn">새로 쓰기</button>
   <button type="button" class="primary" id="saveBtn">제출하기</button>
 </div></div>
@@ -819,7 +807,7 @@ async function makeImage() {
 
   y += 26;
   setFont(ctx, 12, false); ctx.fillStyle = '#9A9A96'; ctx.textAlign = 'right';
-  ctx.fillText('AI 프로젝트 멘토링 · 파이썬 코드 공유방 · 4주차', CW - PAD, y); ctx.textAlign = 'left';
+  ctx.fillText('AI 프로젝트 멘토링 · 파이랩 · 4주차', CW - PAD, y); ctx.textAlign = 'left';
   y += 30;
 
   const out = document.createElement('canvas'); out.width = CW * SCALE; out.height = Math.ceil(Math.min(y, H) * SCALE);

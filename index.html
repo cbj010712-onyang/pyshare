@@ -3,20 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>파이썬 코드 공유방</title>
-<meta name="description" content="멘토링 학생들이 파이썬 코드를 저장하고, 실행하고, 친구 코드를 보는 곳">
+<title>파이랩</title>
+<meta name="description" content="온양고 파이썬 멘토링: 6주 동안 활동지를 쓰고, 파이썬 코드를 저장·실행하고, 멘토 피드백을 받아 발표회까지 가는 곳">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
-<link rel="stylesheet" href="css/codemirror.css?v=20261125j">
-<link rel="stylesheet" href="css/style.css?v=20261125j">
+<link rel="stylesheet" href="css/codemirror.css?v=20261126b">
+<link rel="stylesheet" href="css/style.css?v=20261126b">
 </head>
 <body>
 <header class="top" id="top">
-  <a class="brand" href="#home"><span class="prompt" aria-hidden="true">&gt;&gt;&gt;</span><span class="brand-name">파이썬 코드 공유방</span></a>
+  <button class="btn ghost icon nav-btn" id="navBtn" type="button" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg></button>
+  <a class="brand" href="#home"><span class="prompt" aria-hidden="true">&gt;&gt;&gt;</span><span class="brand-name">파이랩</span><span class="brand-sub">온양고 파이썬 멘토링</span></a>
   <div class="top-right" id="topRight"></div>
 </header>
 
+<nav class="side" id="side" aria-label="메뉴" hidden></nav>
+<div class="side-scrim" id="sideScrim" hidden></div>
 <main id="app" tabindex="-1"></main>
 
 <div class="scrim" id="scrim" hidden></div>
@@ -31,12 +34,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
-<script src="config.js?v=20261125j"></script>
-<script src="js/mock.js?v=20261125j"></script>
-<script src="js/weeks.js?v=20261125j"></script>
-<script src="js/api.js?v=20261125j"></script>
-<script src="js/runner.js?v=20261125j"></script>
-<script src="js/zip.js?v=20261125j"></script>
-<script src="js/app.js?v=20261125j"></script>
+<script src="config.js?v=20261126b"></script>
+<script src="js/mock.js?v=20261126b"></script>
+<script src="js/weeks.js?v=20261126b"></script>
+<script src="js/api.js?v=20261126b"></script>
+<script src="js/runner.js?v=20261126b"></script>
+<script src="js/zip.js?v=20261126b"></script>
+<script src="js/app.js?v=20261126b"></script>
 </body>
 </html>
