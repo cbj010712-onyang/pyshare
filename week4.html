@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>4주차 활동지 · 파이랩</title>
-<script src="config.js?v=20261126b"></script>
-<script src="js/weeks.js?v=20261126b"></script>
-<script src="js/mock.js?v=20261126b"></script>
-<script src="js/api.js?v=20261126b"></script>
-<script src="js/sheet-bridge.js?v=20261126b" data-week="4"></script>
+<title>4주차 활동지 · 멘토링 아카이브</title>
+<script src="config.js?v=20261126c"></script>
+<script src="js/weeks.js?v=20261126c"></script>
+<script src="js/mock.js?v=20261126c"></script>
+<script src="js/api.js?v=20261126c"></script>
+<script src="js/sheet-bridge.js?v=20261126c" data-week="4"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -175,7 +175,7 @@ button.ghost { background: transparent; color: var(--sub); border: 1px solid var
 }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Nanum+Gothic+Coding:wght@400;700&display=swap">
-<link rel="stylesheet" href="css/sheet.css?v=20261126b">
+<link rel="stylesheet" href="css/sheet.css?v=20261126c">
 </head>
 <body>
 <main>
@@ -271,7 +271,7 @@ button.ghost { background: transparent; color: var(--sub); border: 1px solid var
 </main>
 
 <div class="bar"><div class="bar-in">
-  <span class="saved">쓰는 내용은 파이랩에 자동으로 저장돼요</span>
+  <span class="saved">쓰는 내용은 멘토링 아카이브에 자동으로 저장돼요</span>
   <button type="button" class="ghost" id="resetBtn">새로 쓰기</button>
   <button type="button" class="primary" id="saveBtn">제출하기</button>
 </div></div>
@@ -807,7 +807,7 @@ async function makeImage() {
 
   y += 26;
   setFont(ctx, 12, false); ctx.fillStyle = '#9A9A96'; ctx.textAlign = 'right';
-  ctx.fillText('AI 프로젝트 멘토링 · 파이랩 · 4주차', CW - PAD, y); ctx.textAlign = 'left';
+  ctx.fillText('AI 프로젝트 멘토링 아카이브 · 4주차', CW - PAD, y); ctx.textAlign = 'left';
   y += 30;
 
   const out = document.createElement('canvas'); out.width = CW * SCALE; out.height = Math.ceil(Math.min(y, H) * SCALE);

@@ -1,5 +1,5 @@
 /* =====================================================================
-   파이랩 · 화면
+   멘토링 아카이브 · 화면
    화면은 주소 뒤 # 으로 바뀌어요
      #login   학생: 학번·이름·비밀번호 4자리 / 멘토: 멘토 비밀번호
      #home    홈 (학생: 이어서 할 주차·최근 코드 / 멘토: 대시보드)
@@ -225,17 +225,17 @@ function route() {
    ===================================================================== */
 let loginMode = 'student';
 function viewLogin() {
-  document.title = '파이랩 · 온양고 파이썬 멘토링';
+  document.title = '멘토링 아카이브 · 온양고 파이썬 멘토링';
   const journey = WEEKS.map((w) => `<li><span class="jn">${w.no}주차</span><span class="jt">${esc(w.title)}</span></li>`).join('');
   $('#app').innerHTML = `
   <section class="login">
     <div class="login-intro">
       <p class="eyebrow">고1 AI 프로젝트 멘토링</p>
       <h1>내가 정한 주제로<br>파이썬 프로젝트를 끝까지</h1>
-      <p class="lead">파이랩에서 주차별 활동지를 쓰고, 코드를 저장하고 실행해요. 멘토 피드백을 받으며 고쳐서 발표회에서 보여 줘요.</p>
+      <p class="lead">멘토링 아카이브에서 주차별 활동지를 쓰고, 코드를 저장하고 실행해요. 멘토 피드백을 받으며 고쳐서 발표회에서 보여 줘요.</p>
     </div>
     <div class="login-card">
-      <h2 class="login-title">들어가기</h2>
+      <h2 class="login-title">시작하기</h2>
       <div class="tabs" role="tablist" aria-label="누가 들어오나요">
         <button type="button" role="tab" data-mode="student">학생</button>
         <button type="button" role="tab" data-mode="mentor">멘토</button>
@@ -262,11 +262,14 @@ function viewLogin() {
           </div>
         </div>
         <label class="check"><input type="checkbox" id="keep" checked> 이 기기에서 계속 로그인</label>
-        <button class="btn primary big" id="loginBtn">들어가기</button>
+        <button class="btn primary big" id="loginBtn">시작하기</button>
         <p class="form-err" id="loginErr" role="alert">${esc(S.loginMsg)}</p>
       </form>
-      <p class="login-note">학생 명단은 멘토가 미리 등록해요. 처음 들어올 때 비밀번호 4자리를 정하고, 잊으면 멘토가 초기화해 줘요.
-        학교 공용 컴퓨터에서는 <b>계속 로그인</b>을 끄고, 다 쓰면 <b>나가기</b>를 눌러요.</p>
+      <div class="login-help">
+        <p><b>처음 들어오나요?</b> 학번과 이름을 적고, 앞으로 쓸 비밀번호 숫자 4자리를 정해요. 한 번 더 적으면 끝이에요.</p>
+        <p><b>비밀번호를 잊었나요?</b> 멘토에게 초기화를 부탁하면 다시 정할 수 있어요.</p>
+        <p><b>학교 공용 컴퓨터라면</b> <span>계속 로그인</span>을 끄고, 다 쓰면 <span>나가기</span>를 눌러요.</p>
+      </div>
       ${DEMO ? `<div class="demo-box"><b>체험 모드</b> · 이 브라우저에만 저장돼요<br>
         학생: <code>10101 김민트</code> 비밀번호 <code>1111</code> · <code>10102 이감자</code> <code>2222</code><br>
         처음 들어오는 학생: <code>10103 박새싹</code> (비밀번호를 정해 봐요)<br>
@@ -292,7 +295,7 @@ function viewLogin() {
   };
   $$('.tabs [data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   // 학번·이름을 바꾸면 "처음 왔어요" 칸은 닫아요
-  const resetFirst = () => { $('#pin2Wrap').hidden = true; $('#pin2In').value = ''; $('#loginBtn').textContent = '들어가기'; };
+  const resetFirst = () => { $('#pin2Wrap').hidden = true; $('#pin2In').value = ''; $('#loginBtn').textContent = '시작하기'; };
   $('#sidIn').addEventListener('input', resetFirst); $('#nameIn').addEventListener('input', resetFirst);
   $$('.pin').forEach((i) => i.addEventListener('input', () => { i.value = i.value.replace(/\D/g, '').slice(0, 4); }));
   $('#peek').addEventListener('click', (e) => {
@@ -330,7 +333,7 @@ function viewLogin() {
       btn.disabled = false;
       if (r.first) {
         $('#firstName').textContent = r.nickname; $('#pin2Wrap').hidden = false;
-        btn.textContent = '비밀번호 정하고 들어가기'; $('#pin2In').focus(); return;
+        btn.textContent = '비밀번호 정하고 시작하기'; $('#pin2In').focus(); return;
       }
       if (r.error) { err(r.error); $('#pinIn').value = ''; $('#pinIn').focus(); return; }
       done(r.token, { role: r.role, id: r.id, nickname: r.nickname, sid: r.sid });
@@ -398,7 +401,7 @@ async function viewHome(tab = 'home') {
   const mentor = S.me.role === 'mentor', tok = S.seq;
   if (mentor && (tab === 'mine' || tab === 'friends')) tab = 'home';
   if (!mentor && tab === 'codes') tab = 'home';
-  document.title = `${tab === 'home' && mentor ? '대시보드' : TABS[tab]} · 파이랩`;
+  document.title = `${tab === 'home' && mentor ? '대시보드' : TABS[tab]} · 멘토링 아카이브`;
   if (!S.list) $('#app').innerHTML = '<div class="loading">불러오는 중…</div>';
   let sheets = [], members = [];
   try {
@@ -662,7 +665,7 @@ window.addEventListener('keydown', (e) => {
    ===================================================================== */
 async function viewWeek(n) {
   const w = weekOf(n), mentor = S.me.role === 'mentor', tok = S.seq;
-  document.title = `${n}주차 · 파이랩`;
+  document.title = `${n}주차 · 멘토링 아카이브`;
   $('#app').innerHTML = '<div class="loading">불러오는 중…</div>';
   let L, sheets, members = [];
   try {
@@ -837,7 +840,7 @@ function itemsText(week, items, submittedAt) {
 // 학생 한 명의 결과물 파일들. who = { sid, nickname, mid(멘토가 받을 때) }, projects = 그 학생 프로젝트(cs_list 줄)
 async function resultFiles(who, projects, sheets, opt, tick) {
   const root = fileName(`${who.sid ? who.sid + '_' : ''}${who.nickname}_결과물`) + '/';
-  const files = [], notes = [`${who.sid ? who.sid + ' ' : ''}${who.nickname} · 파이랩 결과물`, `받은 날: ${new Date().toLocaleString('ko-KR')}`, ''];
+  const files = [], notes = [`${who.sid ? who.sid + ' ' : ''}${who.nickname} · 멘토링 아카이브 결과물`, `받은 날: ${new Date().toLocaleString('ko-KR')}`, ''];
   const fin = projects.find((p) => p.final_no);
   if (fin) {
     const v = await call('cs_version', { p_id: fin.id, p_no: fin.final_no }); tick();
@@ -941,8 +944,8 @@ function resultsModal(ctx) {
         msg.textContent = 'zip 만드는 중…';
         const blob = MiniZip.make(files);
         const tag = (w) => fileName([w.sid, w.nickname].filter(Boolean).join('_'));
-        const name = mentor ? (jobs.length > 1 ? `파이랩_결과물_전체_${stamp()}.zip` : `파이랩_결과물_${tag(jobs[0].who)}_${stamp()}.zip`)
-          : `파이랩_${tag(S.me)}_결과물.zip`;
+        const name = mentor ? (jobs.length > 1 ? `멘토링아카이브_결과물_전체_${stamp()}.zip` : `멘토링아카이브_결과물_${tag(jobs[0].who)}_${stamp()}.zip`)
+          : `멘토링아카이브_${tag(S.me)}_결과물.zip`;
         saveBlob(blob, name);
         msg.textContent = `받았어요 · 파일 ${files.length}개 (${(blob.size / 1048576).toFixed(1)}MB)`;
         prog.querySelector('.meter i').style.width = '100%';
@@ -1089,7 +1092,7 @@ async function viewProject(id) {
   if (S.P !== P) return;
   const d = P.data;
   P.unseenAtOpen = (d.feedback || []).filter((f) => !f.seen).map((f) => f.id);
-  document.title = `${d.title} · 파이랩`;
+  document.title = `${d.title} · 멘토링 아카이브`;
   renderProject();
 
   // 저장 안 한 코드가 이 기기에 남아 있으면 이어서 보여 줘요
@@ -1185,7 +1188,7 @@ function renderProject() {
 
 /* =====================================================================
    3-1) 웹앱 화면 (#a12): 격리된 iframe 안에서 웹앱을 실행해요
-   - sandbox 에 allow-same-origin 이 없어서, 웹앱은 파이랩의 로그인 정보(localStorage)를 읽을 수 없어요
+   - sandbox 에 allow-same-origin 이 없어서, 웹앱은 멘토링 아카이브의 로그인 정보(localStorage)를 읽을 수 없어요
    ===================================================================== */
 const WA_SANDBOX = 'allow-scripts allow-forms allow-modals';
 let waKey = null, waFiles = [];
@@ -1237,7 +1240,7 @@ async function viewWebapp(id) {
     return;
   }
   if (tok !== S.seq) return;
-  document.title = `${a.title} · 웹앱 · 파이랩`;
+  document.title = `${a.title} · 웹앱 · 멘토링 아카이브`;
   // 프롬프트에 넣을 CSV 미리 받기 (예시 + 학생이 올린 파일)
   waFiles = [];
   if (mentor) { CSVS.forEach((c) => sampleText(c.name).catch(() => {})); call('cs_project_files', { p_id: id }).then((f) => { waFiles = f || []; }, () => {}); }
@@ -1439,7 +1442,7 @@ function onBannerClick(e) {
 /* =====================================================================
    3-0) 데이터 파일 (CSV)
    - 예시 CSV: csv 폴더의 파일 (weeks.js 의 PYSHARE_CSV)
-   - 내 CSV: 학생이 올린 파일. 파이랩 서버(cs_files)에 저장돼서 다른 컴퓨터와 멘토 화면에서도 쓸 수 있어요.
+   - 내 CSV: 학생이 올린 파일. 멘토링 아카이브 서버(cs_files)에 저장돼서 다른 컴퓨터와 멘토 화면에서도 쓸 수 있어요.
      (학생 본인과 멘토만 볼 수 있고, 친구에게는 안 보여요. 한 사람에 10개, 파일 하나 300KB까지)
    - ▶ 실행할 때 예시 CSV와 그 프로젝트 주인이 올린 CSV를 실행 폴더에 넣어 줘서 pd.read_csv("이름.csv") 로 읽어요
    ===================================================================== */
@@ -1530,7 +1533,7 @@ async function openData() {
   const render = () => {
     const up = P.files || [];
     const kb = (n) => (n < 1024 ? n + 'B' : Math.round(n / 1024) + 'KB');
-    const head = mine ? `내 CSV <span class="muted small">${up.length}/10개 · 파이랩에 저장돼요</span>`
+    const head = mine ? `내 CSV <span class="muted small">${up.length}/10개 · 멘토링 아카이브에 저장돼요</span>`
       : mentor ? `${esc(P.data.nickname)}${josa(P.data.nickname, '이', '가')} 올린 CSV` : '';
     $('#drawerBody').innerHTML = `
       <p class="small">코드에서 파일 이름으로 읽어요. <code>pd.read_csv("study_survey.csv")</code></p>
@@ -1865,7 +1868,7 @@ function openSettings() {
       e.preventDefault(); $('#stOk', m).disabled = true;
       try {
         await call('cs_update', { p_id: P.id, p_title: $('#stTitle', m).value, p_desc: $('#stDesc', m).value, p_shared: $('input[name=sh]:checked', m).value === '1', p_week: $('#stWeek', m) && $('#stWeek', m).value ? Number($('#stWeek', m).value) : null });
-        closeModal(); toast('바꿨어요', 'good'); S.list = null; await reloadProject(); document.title = `${P.data.title} · 파이랩`;
+        closeModal(); toast('바꿨어요', 'good'); S.list = null; await reloadProject(); document.title = `${P.data.title} · 멘토링 아카이브`;
       } catch (err) { $('#stErr', m).textContent = err.message; $('#stOk', m).disabled = false; }
     });
     $('#delOk', m).addEventListener('click', async () => {
@@ -1882,7 +1885,7 @@ function openSettings() {
    4) 학생 관리 (멘토)
    ===================================================================== */
 async function viewMembers() {
-  document.title = '학생 관리 · 파이랩';
+  document.title = '학생 관리 · 멘토링 아카이브';
   const tok = S.seq;
   if (!$('.members')) $('#app').innerHTML = '<div class="loading">불러오는 중…</div>';
   let M;

@@ -1,5 +1,5 @@
 /* =====================================================================
-   파이랩 · 모양
+   멘토링 아카이브 · 모양
    - 색은 모두 맨 위 변수(--)에 있어요. 늘 밝은 화면 하나만 써요.
    - 실행 결과(콘솔)도 밝은 색이에요.
    ===================================================================== */
@@ -862,7 +862,7 @@ body {
 .login-card { box-shadow: 0 30px 60px -30px rgba(29, 111, 242, .30), 0 2px 6px rgba(30, 70, 140, .04); }
 
 /* =====================================================================
-   파이랩 (2026-11-26): 왼쪽 메뉴 · 새 첫 화면 · 홈 · 데이터 파일
+   멘토링 아카이브 (2026-11-26): 왼쪽 메뉴 · 새 첫 화면 · 홈 · 데이터 파일
    ===================================================================== */
 :root { --side: 256px; }
 .ic { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -1017,3 +1017,33 @@ a.stat:hover { border-color: color-mix(in srgb, var(--blue) 40%, var(--line)); b
 .hero-side .eyebrow.gap { margin-top: 10px; }
 .hero-side .fb-row.recent { flex-direction: column; align-items: flex-start; gap: 2px; }
 .hero-side .go { text-decoration: none; }
+
+/* 첫 화면: 체험 안내가 없어도 카드가 작아 보이지 않게 (2026-11-26) */
+.login { min-height: calc(100svh - var(--top) - 64px); align-content: center; padding-block: 24px; }
+.login-card { padding: 34px 34px 30px; }
+.login-title { font-size: 24px; letter-spacing: -.02em; }
+.login-card .tabs { margin-top: 20px; }
+.login-card label { font-size: 14.5px; }
+.login-card input:not([type="checkbox"]) { min-height: 52px; font-size: 16.5px; }
+.login-card .btn.big { min-height: 56px; font-size: 17px; margin-top: 2px; }
+.login-help { display: grid; gap: 8px; margin-top: 20px; padding: 16px 18px; border-radius: 14px; background: var(--blue-soft); border: 1px solid color-mix(in srgb, var(--blue) 14%, transparent); }
+.login-help p { margin: 0; font-size: 14px; line-height: 1.65; color: var(--muted); }
+.login-help b { color: var(--ink); margin-right: 2px; }
+.login-help span { font-weight: 700; color: var(--ink); }
+.login-card .demo-box { margin-top: 14px; }
+@media (min-width: 1500px) {
+  .login { max-width: 1240px; grid-template-columns: minmax(0, 1fr) minmax(0, 480px); column-gap: 104px; }
+  .login-intro h1 { font-size: 50px; }
+  .lead { font-size: 17.5px; max-width: 46ch; }
+  .jt { font-size: 15.5px; }
+  .login-points b { font-size: 15.5px; }
+  .login-points span { font-size: 14.5px; }
+  .login-card { padding: 40px 40px 36px; }
+}
+@media (max-width: 600px) {
+  .login { min-height: 0; padding-block: 4px 16px; }
+  .login-card { padding: 24px 18px 22px; }
+  .login-title { font-size: 21px; }
+  .login-help { padding: 14px; }
+}
+.hero-side .fb-row { align-self: stretch; }
